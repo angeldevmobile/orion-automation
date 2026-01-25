@@ -17,7 +17,13 @@ router.get('/:id', (req, res) => conversationsController.getConversationById(req
 // POST /api/conversations - Create new conversation
 router.post('/', (req, res) => conversationsController.createConversation(req, res));
 
-// POST /api/conversations/:id/messages - Add message to conversation
+// POST /api/conversations/send - Send message (creates conversation if needed)
+router.post('/send', (req, res) => conversationsController.sendMessage(req, res));
+
+// POST /api/conversations/:id/send - Send message to existing conversation
+router.post('/:id/send', (req, res) => conversationsController.sendMessage(req, res));
+
+// POST /api/conversations/:id/messages - Add message to conversation (manual)
 router.post('/:id/messages', (req, res) => conversationsController.addMessage(req, res));
 
 // PATCH /api/conversations/:id - Update conversation (title)

@@ -1,41 +1,70 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
-import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
+import { MarkdownMessage } from './MarkdownMessage';
+import { FileAttachment, type AttachedFile } from './FileAttachment';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  attachments?: AttachedFile[];
+}
+
+interface ChatInterfaceProps {
+  conversationId?: string | null;
+  onConversationCreated?: (id: string) => void;
+}
+
+interface MessageResponse {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  createdAt: string;
 }
 
 const initialMessages: Message[] = [
   {
     id: '1',
     role: 'assistant',
-    content: '¡Hola! 👋 Soy Nexus AI, tu asistente inteligente. Puedo ayudarte con cualquier pregunta, analizar documentos, escribir contenido, o simplemente conversar. ¿En qué puedo ayudarte hoy?',
+    content: '¡Hola! 👋 Soy Orion AI, tu asistente inteligente especializado en desarrollo de software y automatización. Puedo ayudarte con:\n\n• Análisis y optimización de código\n• Arquitectura de software\n• Debugging y resolución de problemas\n• Documentación técnica\n• Code reviews y mejores prácticas\n• Automatización de procesos\n\n¿En qué puedo ayudarte hoy?',
     timestamp: new Date(),
   },
 ];
 
-const sampleResponses = [
-  "He analizado tu consulta. Basándome en el contexto, te recomendaría considerar las siguientes opciones...",
-  "¡Excelente pregunta! Déjame explicarte paso a paso cómo funciona esto...",
-  "Entiendo lo que necesitas. Aquí tienes una respuesta detallada con ejemplos prácticos...",
-  "He procesado tu solicitud. Aquí está el resultado con los puntos más importantes destacados...",
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'text/plain',
+  'text/markdown',
+  'application/pdf',
+  'application/json',
+  'text/javascript',
+  'text/typescript',
+  'text/html',
+  'text/css',
 ];
 
-export function ChatInterface() {
+export function ChatInterface({ conversationId, onConversationCreated }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId || null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -43,31 +72,188 @@ export function ChatInterface() {
     }
   }, [messages]);
 
+  const loadConversation = useCallback(async (id: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conversations/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to load conversation');
+      
+      const result = await response.json();
+      
+      if (result.success && result.data.messages) {
+        const loadedMessages = result.data.messages.map((msg: MessageResponse) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.createdAt),
+        }));
+        
+        setMessages(loadedMessages);
+        setCurrentConversationId(id);
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo cargar la conversación',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (conversationId && conversationId !== currentConversationId) {
+      loadConversation(conversationId);
+    } else if (!conversationId && currentConversationId) {
+      setMessages(initialMessages);
+      setCurrentConversationId(null);
+    }
+  }, [conversationId, currentConversationId, loadConversation]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    
+    files.forEach((file) => {
+      // Validar tamaño
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          title: 'Archivo demasiado grande',
+          description: `${file.name} excede el límite de 10MB`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Validar tipo
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        toast({
+          title: 'Tipo de archivo no permitido',
+          description: `${file.name} no es un tipo de archivo soportado`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const fileId = Date.now().toString() + Math.random();
+      let fileType: AttachedFile['type'] = 'other';
+      
+      if (file.type.startsWith('image/')) {
+        fileType = 'image';
+      } else if (file.type.startsWith('text/') || file.type === 'application/json') {
+        fileType = 'document';
+      }
+
+      const attachedFile: AttachedFile = {
+        id: fileId,
+        file,
+        type: fileType,
+      };
+
+      // Crear preview para imágenes
+      if (fileType === 'image') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          attachedFile.preview = e.target?.result as string;
+          setAttachedFiles(prev => [...prev, attachedFile]);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setAttachedFiles(prev => [...prev, attachedFile]);
+      }
+    });
+
+    // Resetear input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setAttachedFiles(prev => prev.filter(f => f.id !== id));
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && attachedFiles.length === 0) || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: input.trim() || '📎 Archivo adjunto',
       timestamp: new Date(),
+      attachments: attachedFiles,
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageContent = input.trim();
+    const messageFiles = attachedFiles; 
     setInput('');
+    setAttachedFiles([]);
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = currentConversationId
+        ? `${process.env.NEXT_PUBLIC_API_URL}/api/conversations/${currentConversationId}/send`
+        : `${process.env.NEXT_PUBLIC_API_URL}/api/conversations/send`;
+
+      // Crear FormData para enviar archivos
+      const formData = new FormData();
+      formData.append('message', messageContent);
+      
+      messageFiles.forEach((attachedFile) => {
+        formData.append('files', attachedFile.file);
+      });
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+          // No establecer Content-Type, FormData lo hace automáticamente
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send message');
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send message');
+      }
+
+      if (!currentConversationId && result.data.conversationId) {
+        setCurrentConversationId(result.data.conversationId);
+        onConversationCreated?.(result.data.conversationId);
+      }
+
       const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: result.data.message.id,
         role: 'assistant',
-        content: sampleResponses[Math.floor(Math.random() * sampleResponses.length)],
-        timestamp: new Date(),
+        content: result.data.message.content,
+        timestamp: new Date(result.data.message.createdAt),
       };
+
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo enviar el mensaje. Intenta de nuevo.',
+        variant: 'destructive',
+      });
+      
+      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -78,10 +264,10 @@ export function ChatInterface() {
   };
 
   const quickActions = [
-    { label: 'Explicar algo', icon: '💡' },
-    { label: 'Escribir texto', icon: '✍️' },
-    { label: 'Resumir documento', icon: '📄' },
-    { label: 'Generar ideas', icon: '🎯' },
+    { label: 'Explicar código', icon: '💡' },
+    { label: 'Generar función', icon: '⚡' },
+    { label: 'Revisar código', icon: '🔍' },
+    { label: 'Documentar API', icon: '📄' },
   ];
 
   return (
@@ -93,15 +279,15 @@ export function ChatInterface() {
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="font-semibold">Chat con Nexus AI</h2>
-            <p className="text-xs text-muted-foreground">Tu asistente inteligente personal</p>
+            <h2 className="font-semibold">Chat con Orion AI</h2>
+            <p className="text-xs text-muted-foreground">Tu asistente de desarrollo y automatización</p>
           </div>
         </div>
       </div>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4 max-w-3xl mx-auto">
+        <div className="space-y-4 max-w-4xl mx-auto">
           {messages.map((message, index) => (
             <div
               key={message.id}
@@ -122,12 +308,22 @@ export function ChatInterface() {
                 </AvatarFallback>
               </Avatar>
               <Card className={cn(
-                "p-3 max-w-[80%] shadow-sm transition-all duration-200",
+                "p-4 max-w-[85%] shadow-sm transition-all duration-200",
                 message.role === 'user' 
                   ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' 
                   : 'bg-card rounded-2xl rounded-tl-sm'
               )}>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                {message.attachments && message.attachments.length > 0 && (
+                  <FileAttachment 
+                    files={message.attachments} 
+                    onRemove={() => {}} // Read-only en mensajes enviados
+                  />
+                )}
+                {message.role === 'assistant' ? (
+                  <MarkdownMessage content={message.content} />
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                )}
                 <p className={cn(
                   "text-[10px] mt-2 opacity-60",
                   message.role === 'user' ? 'text-right' : 'text-left'
@@ -148,7 +344,7 @@ export function ChatInterface() {
               <Card className="p-3 bg-card rounded-2xl rounded-tl-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Pensando...</span>
+                  <span className="text-sm">Analizando{attachedFiles.length > 0 ? ' archivos...' : '...'}</span>
                 </div>
               </Card>
             </div>
@@ -159,7 +355,7 @@ export function ChatInterface() {
       {/* Quick Actions */}
       {messages.length === 1 && (
         <div className="px-4 pb-2">
-          <div className="flex flex-wrap gap-2 max-w-3xl mx-auto animate-fade-in">
+          <div className="flex flex-wrap gap-2 max-w-4xl mx-auto animate-fade-in">
             {quickActions.map((action) => (
               <Button
                 key={action.label}
@@ -178,8 +374,30 @@ export function ChatInterface() {
 
       {/* Input Area */}
       <div className="p-4 border-t border-border bg-card">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
+          {/* File Attachments Preview */}
+          {attachedFiles.length > 0 && (
+            <FileAttachment files={attachedFiles} onRemove={handleRemoveFile} />
+          )}
+
           <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept={ALLOWED_FILE_TYPES.join(',')}
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <Input
               ref={inputRef}
               value={input}
@@ -191,7 +409,7 @@ export function ChatInterface() {
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
               size="icon"
               className="h-10 w-10 rounded-full shrink-0 transition-all duration-200 hover:scale-105"
             >
@@ -199,7 +417,7 @@ export function ChatInterface() {
             </Button>
           </div>
           <p className="text-[10px] text-center text-muted-foreground mt-2">
-            Nexus AI puede cometer errores. Verifica la información importante.
+            Orion AI puede cometer errores. Verifica la información importante.
           </p>
         </div>
       </div>

@@ -8,7 +8,7 @@ import { Menu, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Chat() {
-  const [activeChat, setActiveChat] = useState<string | null>("1");
+  const [activeChat, setActiveChat] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chatKey, setChatKey] = useState(0);
 
@@ -20,6 +20,11 @@ export default function Chat() {
   const handleSelectChat = (id: string) => {
     setActiveChat(id);
     setChatKey(prev => prev + 1);
+  };
+
+  const handleConversationCreated = (id: string) => {
+    setActiveChat(id);
+    window.location.reload(); 
   };
 
   return (
@@ -81,7 +86,11 @@ export default function Chat() {
 
         {/* Chat Interface */}
         <div className="flex-1 w-full">
-          <ChatInterface key={chatKey} />
+          <ChatInterface 
+            key={chatKey} 
+            conversationId={activeChat}
+            onConversationCreated={handleConversationCreated}
+          />
         </div>
       </main>
     </div>

@@ -156,5 +156,175 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Estilos para Markdown en el chat */
+@layer components {
+  /* Prose base */
+  .prose {
+    @apply text-foreground max-w-none;
+    font-family: var(--font-sans);
+  }
+
+  /* Código inline */
+  .prose :not(pre) > code {
+    @apply bg-muted text-foreground px-1.5 py-0.5 rounded text-sm;
+    font-family: var(--font-mono);
+  }
+
+  /* Bloques de código */
+  .prose pre {
+    @apply my-0 bg-transparent p-0;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0 text-sm;
+    font-family: var(--font-mono);
+  }
+
+  /* Énfasis */
+  .prose strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .prose em {
+    @apply italic;
+  }
+
+  /* Separadores */
+  .prose hr {
+    @apply border-border my-4;
+  }
+
+  /* Títulos */
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply font-bold text-foreground;
+  }
+
+  .prose h1 {
+    @apply text-2xl mt-6 mb-4;
+  }
+
+  .prose h2 {
+    @apply text-xl mt-5 mb-3;
+  }
+
+  .prose h3 {
+    @apply text-lg mt-4 mb-2;
+  }
+
+  /* Enlaces */
+  .prose a {
+    @apply text-primary hover:text-primary/80 transition-colors underline-offset-2;
+  }
+
+  .prose a:hover {
+    @apply underline;
+  }
+
+  /* Listas */
+  .prose ul,
+  .prose ol {
+    @apply space-y-2 my-4;
+  }
+
+  .prose li {
+    @apply text-foreground;
+  }
+
+  .prose li::marker {
+    @apply text-muted-foreground;
+  }
+
+  /* Párrafos */
+  .prose p {
+    @apply leading-relaxed my-3;
+  }
+
+  /* Blockquotes */
+  .prose blockquote {
+    @apply border-l-4 border-primary/50 pl-4 italic text-muted-foreground my-4;
+  }
+
+  .prose blockquote p {
+    @apply mb-0;
+  }
+
+  /* Tablas */
+  .prose table {
+    @apply w-full border-collapse my-4;
+  }
+
+  .prose th {
+    @apply bg-muted font-semibold text-left;
+  }
+
+  .prose td,
+  .prose th {
+    @apply border border-border px-4 py-2;
+  }
+
+  .prose tbody tr:hover {
+    @apply bg-muted/50 transition-colors;
+  }
+
+  /* Imágenes */
+  .prose img {
+    @apply rounded-lg my-4 max-w-full h-auto;
+  }
+
+  /* Dark mode para prose */
+  .dark .prose-invert {
+    @apply text-foreground;
+  }
+
+  .dark .prose-invert :not(pre) > code {
+    @apply bg-muted text-foreground;
+  }
+
+  .dark .prose-invert strong {
+    @apply text-foreground;
+  }
+
+  .dark .prose-invert a {
+    @apply text-primary hover:text-primary/80;
+  }
+
+  .dark .prose-invert blockquote {
+    @apply border-primary/50 text-muted-foreground;
+  }
+
+  .dark .prose-invert th {
+    @apply bg-muted;
+  }
+
+  .dark .prose-invert td,
+  .dark .prose-invert th {
+    @apply border-border;
+  }
+}
+
+/* Animaciones personalizadas */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

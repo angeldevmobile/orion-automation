@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  password          String
+  emailVerified     Boolean         @default(false)
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  profile           Profile?
+  userRoles         UserRole[]
+  subscriptions     Subscription[]
+  payments          Payment[]
+  projects          Project[]
+  conversations     Conversation[]
+
+  @@map("users")
+}
+
+model Profile {
+  id          String    @id @default(uuid())
+  userId      String    @unique @map("user_id")
+  fullName    String?   @map("full_name")
+  avatarUrl   String?   @map("avatar_url")
+  company     String?
+  jobTitle    String?   @map("job_title")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model UserRole {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  role        String
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([role])
+  @@map("user_roles")
+}
+
+model Subscription {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  plan                  String
+  status                String
+  stripeCustomerId      String?   @map("stripe_customer_id")
+  stripeSubscriptionId  String?   @map("stripe_subscription_id")
+  currentPeriodStart    DateTime? @map("current_period_start")
+  currentPeriodEnd      DateTime? @map("current_period_end")
+  cancelAtPeriodEnd     Boolean   @default(false) @map("cancel_at_period_end")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments              Payment[]
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  subscriptionId    String        @map("subscription_id")
+  userId            String        @map("user_id")
+  amount            Int
+  currency          String        @default("usd")
+  status            String
+  stripePaymentId   String?       @map("stripe_payment_id")
+  invoiceUrl        String?       @map("invoice_url")
+  createdAt         DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  subscription      Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([userId])
+  @@index([status])
+  @@index([stripePaymentId])
+  @@map("payments")
+}
+
+model Project {
+  id              String          @id @default(uuid())
+  userId          String          @map("user_id")
+  name            String
+  description     String?
+  type            String
+  status          String          @default("active")
+  fileCount       Int             @default(0) @map("file_count")
+  issuesFound     Int             @default(0) @map("issues_found")
+  lastAnalysisAt  DateTime?       @map("last_analysis_at")
+  settings        Json            @default("{}")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectSources  ProjectSource[]
+  conversations   Conversation[]
+  analyses        Analysis[]
+  actionHistory   ActionHistory[]
+  codeIndex       CodeIndex?
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("projects")
+}
+
+model ProjectSource {
+  id            String    @id @default(uuid())
+  projectId     String    @map("project_id")
+  sourceType    String    @map("source_type")
+  sourceName    String    @map("source_name")
+  sourceUrl     String?   @map("source_url")
+  branch        String?
+  accessToken   String?   @map("access_token")
+  syncStatus    String    @default("pending") @map("sync_status")
+  lastSyncedAt  DateTime? @map("last_synced_at")
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([sourceType])
+  @@index([syncStatus])
+  @@map("project_sources")
+}
+
+model Conversation {
+  id              String    @id @default(uuid())
+  projectId       String?   @map("project_id")
+  userId          String    @map("user_id")
+  title           String    @default("New Conversation")
+  isArchived      Boolean   @default(false) @map("is_archived")
+  lastMessageAt   DateTime? @map("last_message_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  project         Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        Message[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([isArchived])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id              String        @id @default(uuid())
+  conversationId  String        @map("conversation_id")
+  role            String
+  content         String
+  metadata        Json          @default("{}")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  conversation    Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@index([role])
+  @@map("messages")
+}
+
+model Analysis {
+  id              String          @id @default(uuid())
+  projectId       String          @map("project_id")
+  objective       String
+  contextUsed     String?         @map("context_used")
+  reasoning       String?
+  result          String?
+  risks           Json            @default("[]")
+  assumptions     Json            @default("[]")
+  nextSteps       Json            @default("[]") @map("next_steps")
+  artifacts       Json            @default("[]")
+  responseType    String?         @map("response_type")
+  tokensUsed      Int             @default(0) @map("tokens_used")
+  modelUsed       String?         @map("model_used")
+  durationMs      Int?            @map("duration_ms")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  actionHistory   ActionHistory[]
+  artifactRecords Artifact[]
+  decisions       Decision[]
+
+  @@index([projectId])
+  @@index([createdAt])
+  @@index([responseType])
+  @@map("analyses")
+}
+
+model Artifact {
+  id         String   @id @default(uuid())
+  analysisId String   @map("analysis_id")
+  name       String
+  type       String   // 'documentation', 'code', 'config', 'report'
+  content    String   @db.Text
+  status     String   @default("generated") // 'generated', 'modified', 'deleted'
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([type])
+  @@index([status])
+  @@map("artifacts")
+}
+
+model Decision {
+  id          String   @id @default(uuid())
+  analysisId  String   @map("analysis_id")
+  title       String
+  description String   @db.Text
+  status      String   @default("pending") // 'pending', 'confirmed', 'rejected'
+  category    String   // 'architecture', 'security', 'performance', 'maintainability'
+  impact      String?  // 'high', 'medium', 'low'
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([status])
+  @@index([category])
+  @@map("decisions")
+}
+
+model ActionHistory {
+  id                  String    @id @default(uuid())
+  projectId           String    @map("project_id")
+  analysisId          String?   @map("analysis_id")
+  actionType          String    @map("action_type")
+  actionDescription   String    @map("action_description")
+  status              String    @default("completed")
+  result              Json      @default("{}")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  analysis            Analysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([analysisId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("action_history")
+}
+
+model CodeIndex {
+  id         String   @id @default(uuid())
+  projectId  String   @unique @map("project_id")
+  indexData  Json     @map("index_data")
+  version    Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([version])
+  @@map("code_indexes")
+}

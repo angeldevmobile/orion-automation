@@ -29,6 +29,45 @@ export class AuthController {
     }
   }
 
+  async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      console.log('Recibida petición de recuperación para:', email); 
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email is required'
+        })
+      }
+      const result = await authService.requestPasswordReset(email);
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  async resetPassword(req: Request, res: Response) {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) {
+        return res.status(400).json({
+          success: false,
+          error: 'Token and new password are required'
+        })
+      }
+      const result = await authService.resetPassword(token, newPassword);
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body;

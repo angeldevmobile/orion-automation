@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { ConversationsService } from '../services/conversacionsService.js';
-import { ClaudeService } from '../services/claudeService.js';
+import { ClaudeService, type ClaudeMessage } from '../services/claudeService.js';
 import multer from 'multer';
 
 const conversationsService = new ConversationsService();
@@ -23,6 +23,10 @@ const upload = multer({
       'text/markdown',
       'application/pdf',
       'application/json',
+      'text/javascript',
+      'text/typescript',
+      'text/html',
+      'text/css',
     ];
     
     if (allowedTypes.includes(file.mimetype)) {
@@ -34,6 +38,18 @@ const upload = multer({
 });
 
 export const uploadMiddleware = upload.array('files', 5); // Máximo 5 archivos
+
+// Tipo helper para los bloques de contenido
+type ContentBlock = 
+  | { type: 'text'; text: string }
+  | { 
+      type: 'image'; 
+      source: { 
+        type: 'base64'; 
+        media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; 
+        data: string 
+      } 
+    };
 
 export class ConversationsController {
   async getUserConversations(req: Request, res: Response) {
@@ -95,14 +111,20 @@ export class ConversationsController {
 
   async sendMessage(req: Request, res: Response) {
     try {
+      console.log('req.body:', req.body);
+      console.log('req.files:', req.files);
+      console.log('Content-Type:', req.headers['content-type']);
+
       const conversationId = req.params.id as string | undefined;
       const userId = req.user.id;
       const { message, projectId } = req.body;
+      const files = req.files as Express.Multer.File[] | undefined;
 
-      if (!message?.trim()) {
+      // Validar que hay al menos mensaje o archivos
+      if (!message?.trim() && (!files || files.length === 0)) {
         return res.status(400).json({
           success: false,
-          error: 'Message is required'
+          error: 'Se requiere un mensaje o archivos'
         });
       }
 
@@ -110,19 +132,28 @@ export class ConversationsController {
 
       // Si no hay conversationId, crear una nueva conversación
       if (!conversationId) {
-        const title = message.slice(0, 50);
+        const title = message?.slice(0, 50) || 'Conversación con archivos';
         const newConversation = await conversationsService.createConversation(userId, title, projectId);
         conversationIdToUse = newConversation.id;
       } else {
         conversationIdToUse = conversationId;
       }
 
-      // Guardar mensaje del usuario
+      // Guardar mensaje del usuario con metadata de archivos si existen
+      const userMessageMetadata = files && files.length > 0 ? {
+        files: files.map(f => ({
+          name: f.originalname,
+          type: f.mimetype,
+          size: f.size
+        }))
+      } : undefined;
+
       await conversationsService.addMessage(
         conversationIdToUse,
         userId,
         'user',
-        message
+        message || '📎 Archivo adjunto',
+        userMessageMetadata
       );
 
       // Obtener conversación completa con mensajes y proyecto
@@ -131,10 +162,65 @@ export class ConversationsController {
         userId
       );
 
-      const claudeMessages = conversationWithMessages.messages.map(msg => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      }));
+      // Preparar mensajes para Claude
+      const claudeMessages: ClaudeMessage[] = [];
+
+      // Convertir mensajes anteriores
+      for (const msg of conversationWithMessages.messages.slice(0, -1)) {
+        claudeMessages.push({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        });
+      }
+
+      // Último mensaje (el actual) - puede tener archivos
+      if (files && files.length > 0) {
+        const contentParts: ContentBlock[] = [];
+
+        // Agregar texto si existe
+        if (message?.trim()) {
+          contentParts.push({
+            type: 'text',
+            text: message
+          });
+        }
+
+        // Agregar imágenes
+        for (const file of files) {
+          if (file.mimetype.startsWith('image/')) {
+            const base64Data = file.buffer.toString('base64');
+            
+            // Validar que sea un tipo soportado
+            const mediaType = file.mimetype as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+            
+            contentParts.push({
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64Data,
+              }
+            });
+          } else if (file.mimetype.startsWith('text/') || file.mimetype === 'application/json') {
+            // Para archivos de texto, agregar su contenido
+            const textContent = file.buffer.toString('utf-8');
+            contentParts.push({
+              type: 'text',
+              text: `\n\n--- Archivo: ${file.originalname} ---\n${textContent}\n--- Fin del archivo ---\n`
+            });
+          }
+        }
+
+        claudeMessages.push({
+          role: 'user',
+          content: contentParts
+        });
+      } else {
+        claudeMessages.push({
+          role: 'user',
+          content: message
+        });
+      }
 
       // Obtener contexto del proyecto si existe
       let projectContext: string | undefined;

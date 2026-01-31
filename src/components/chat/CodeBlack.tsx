@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Button } from '@/components/ui/button';
 import { Check, Copy } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 interface CodeBlockProps {
   language: string;
@@ -12,12 +12,17 @@ interface CodeBlockProps {
 
 export function CodeBlock({ language, value }: CodeBlockProps) {
   const [copied, setCopied] = useState(false);
+  const { theme } = useTheme();
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  // Determinar si el tema es oscuro
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const codeStyle = isDark ? vscDarkPlus : vs;
 
   return (
     <div className="relative group my-4 rounded-lg overflow-hidden border border-border">
@@ -47,14 +52,13 @@ export function CodeBlock({ language, value }: CodeBlockProps) {
       </div>
 
       {/* Código con resaltado de sintaxis */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto bg-muted/30">
         <SyntaxHighlighter
           language={language}
-          style={vscDarkPlus}
+          style={codeStyle}
           customStyle={{
             margin: 0,
             padding: '1rem',
-            background: 'transparent',
             fontSize: '0.875rem',
           }}
           codeTagProps={{

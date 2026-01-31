@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Loader2, Mail, Sparkles, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { forgotPassword } from "@/services/orionApi"; 
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -16,16 +17,34 @@ export default function ForgotPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    setIsSubmitted(true);
-    
-    toast({
-      title: "Email enviado",
-      description: "Revisa tu bandeja de entrada para restablecer tu contraseña.",
-    });
+
+    try {
+      const result = await forgotPassword(email); // <-- Llama al backend
+
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.error || "No se pudo enviar el email.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      setIsSubmitted(true);
+      toast({
+        title: "Email enviado",
+        description: "Revisa tu bandeja de entrada para restablecer tu contraseña.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error de red",
+        description: "No se pudo conectar al servidor.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

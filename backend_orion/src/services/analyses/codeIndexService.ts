@@ -20,7 +20,7 @@ export class CodeIndexService {
       }
     });
 
-    console.log(`✅ Code index saved for project ${projectId}`);
+    console.log(`Code index saved for project ${projectId}`);
   }
 
   async get(projectId: string): Promise<CodeIndex | null> {

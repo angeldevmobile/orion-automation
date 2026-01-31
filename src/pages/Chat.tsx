@@ -19,16 +19,14 @@ export default function Chat() {
 
   const handleSelectChat = (id: string) => {
     setActiveChat(id);
-    setChatKey(prev => prev + 1);
   };
 
   const handleConversationCreated = (id: string) => {
     setActiveChat(id);
-    window.location.reload(); 
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       <Header />
       <main className="flex-1 flex w-full overflow-hidden">
         {/* Mobile Sidebar */}
@@ -59,7 +57,7 @@ export default function Chat() {
           sidebarOpen ? "w-72" : "w-0"
         )}>
           {sidebarOpen && (
-            <div className="w-72 animate-fade-in">
+            <div className="w-72 animate-fade-in h-full">
               <ChatHistory 
                 onNewChat={handleNewChat}
                 onSelectChat={handleSelectChat}
@@ -85,7 +83,7 @@ export default function Chat() {
         </Button>
 
         {/* Chat Interface */}
-        <div className="flex-1 w-full">
+        <div className="flex-1 h-full overflow-hidden">
           <ChatInterface 
             key={chatKey} 
             conversationId={activeChat}

@@ -1,3 +1,5 @@
+import { API_CONFIG, getApiUrl, getAuthHeaders, getAuthHeadersForUpload } from '@/config/apiConfig';
+
 // Interfaces de autenticación
 export interface LoginData {
   email: string;
@@ -137,9 +139,32 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+// Interfaces de documentación
+export interface DocumentationRequest {
+  projectId: string;
+  documentTypes: string[];
+}
+
+export interface DocumentationArtifact {
+  id: string;
+  name: string;
+  type: string;
+  content: string;
+  status: 'generated' | 'modified' | 'deleted';
+  analysisId: string;
+  createdAt: string;
+  updatedAt: string;
+  metadata: Record<string, unknown>;
+  analysis?: {
+    id: string;
+    createdAt: string;
+    objective: string;
+  };
+}
+
 // API de autenticación
 export async function login(data: LoginData): Promise<AuthResponse> {
-  const res = await fetch('http://localhost:3000/api/auth/login', {
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.login), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -148,7 +173,7 @@ export async function login(data: LoginData): Promise<AuthResponse> {
 }
 
 export async function register(data: RegisterData): Promise<AuthResponse> {
-  const res = await fetch('http://localhost:3000/api/auth/register', {
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.register), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -157,17 +182,15 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
 }
 
 export async function getMe(token: string): Promise<AuthResponse> {
-  const res = await fetch('http://localhost:3000/api/auth/me', {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.me), {
+    headers: getAuthHeaders(token),
   });
   return res.json();
 }
 
 // API de salud
 export async function getHealth(): Promise<{ status: string; timestamp: string; database: string; version: string }> {
-  const res = await fetch('http://localhost:3000/api/health');
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.health));
   return res.json();
 }
 
@@ -176,12 +199,9 @@ export async function createProject(
   data: ProjectData,
   token: string
 ): Promise<ProjectResponse> {
-  const res = await fetch('http://localhost:3000/api/projects', {
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.projects), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
+    headers: getAuthHeaders(token),
     body: JSON.stringify(data),
   });
   return res.json();
@@ -199,11 +219,9 @@ export async function uploadProjectFiles(
       formData.append('files', file);
     });
 
-    const res = await fetch(`http://localhost:3000/api/projects/${projectId}/upload`, {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.projectUpload(projectId)), {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getAuthHeadersForUpload(token),
       body: formData,
     });
 
@@ -222,12 +240,9 @@ export async function analyzeProject(
   token: string
 ): Promise<AnalysisResponse> {
   try {
-    const res = await fetch(`http://localhost:3000/api/analyses/project/${projectId}/analyze`, {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.analyzeProject(projectId)), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getAuthHeaders(token),
     });
 
     if (!res.ok) {
@@ -262,13 +277,10 @@ export async function getProjectAnalyses(
   token: string
 ): Promise<{ success: boolean; data: unknown[]; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/analyses/project/${projectId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.projectAnalyses(projectId)), {
+      headers: getAuthHeaders(token),
     });
 
-    // ✅ Verificar Content-Type antes de parsear
     const contentType = res.headers.get('content-type');
     if (!contentType?.includes('application/json')) {
       const text = await res.text();
@@ -297,10 +309,8 @@ export async function getAnalysisStats(
   token: string
 ): Promise<{ success: boolean; data?: { totalAnalyses: number; totalTokens: number; avgDuration: number }; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/analyses/project/${projectId}/stats`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.analysisStats(projectId)), {
+      headers: getAuthHeaders(token),
     });
 
     return res.json();
@@ -317,10 +327,8 @@ export async function getUserProjects(
   token: string
 ): Promise<{ success: boolean; data: Project[]; error?: string }> {
   try {
-    const res = await fetch('http://localhost:3000/api/projects', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.projects), {
+      headers: getAuthHeaders(token),
     });
 
     if (!res.ok) {
@@ -338,16 +346,13 @@ export async function getUserProjects(
   }
 }
 
-// Obtener artefactos de un análisis
 export async function getAnalysisArtifacts(
   analysisId: string,
   token: string
 ): Promise<{ success: boolean; data: Artifact[]; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/analyses/${analysisId}/artifacts`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.analysisArtifacts(analysisId)), {
+      headers: getAuthHeaders(token),
     });
 
     if (!res.ok) {
@@ -365,16 +370,13 @@ export async function getAnalysisArtifacts(
   }
 }
 
-// Obtener decisiones de un análisis
 export async function getAnalysisDecisions(
   analysisId: string,
   token: string
 ): Promise<{ success: boolean; data: Decision[]; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/analyses/${analysisId}/decisions`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.analysisDecisions(analysisId)), {
+      headers: getAuthHeaders(token),
     });
 
     if (!res.ok) {
@@ -392,16 +394,13 @@ export async function getAnalysisDecisions(
   }
 }
 
-// Obtener historial de acciones del proyecto
 export async function getProjectActions(
   projectId: string,
   token: string
 ): Promise<{ success: boolean; data: ActionItem[]; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/projects/${projectId}/actions`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.projectActions(projectId)), {
+      headers: getAuthHeaders(token),
     });
 
     if (!res.ok) {
@@ -419,19 +418,15 @@ export async function getProjectActions(
   }
 }
 
-// Actualizar estado de una decisión
 export async function updateDecisionStatus(
   decisionId: string,
   status: 'pending' | 'confirmed' | 'rejected',
   token: string
 ): Promise<ApiResponse<Decision>> { 
   try {
-    const res = await fetch(`http://localhost:3000/api/decisions/${decisionId}`, {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.decision(decisionId)), {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getAuthHeaders(token),
       body: JSON.stringify({ status })
     });
 
@@ -447,41 +442,14 @@ export async function updateDecisionStatus(
   }
 }
 
-// Interfaces de documentación
-export interface DocumentationRequest {
-  projectId: string;
-  documentTypes: string[];
-}
-
-export interface DocumentationArtifact {
-  id: string;
-  name: string;
-  type: string;
-  content: string;
-  status: 'generated' | 'modified' | 'deleted';
-  analysisId: string;
-  createdAt: string;
-  updatedAt: string;
-  metadata: Record<string, unknown>;
-  analysis?: {
-    id: string;
-    createdAt: string;
-    objective: string;
-  };
-}
-
-// API de documentación
 export async function generateDocumentation(
   data: DocumentationRequest,
   token: string
 ): Promise<{ success: boolean; data: DocumentationArtifact[]; meta?: { analysisId: string; count: number; durationMs: number }; error?: string }> {
   try {
-    const res = await fetch('http://localhost:3000/api/documentation/generate', {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.generateDocumentation), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getAuthHeaders(token),
       body: JSON.stringify(data),
     });
 
@@ -506,10 +474,8 @@ export async function getProjectDocumentation(
   token: string
 ): Promise<{ success: boolean; data: DocumentationArtifact[]; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/documentation/project/${projectId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.projectDocumentation(projectId)), {
+      headers: getAuthHeaders(token),
     });
 
     if (!res.ok) {
@@ -534,11 +500,9 @@ export async function downloadDocumentation(
 ): Promise<Blob> {
   try {
     const res = await fetch(
-      `http://localhost:3000/api/documentation/${artifactId}/download?format=${format}`,
+      getApiUrl(API_CONFIG.endpoints.downloadDocumentation(artifactId, format)),
       {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers: getAuthHeadersForUpload(token),
       }
     );
 
@@ -558,12 +522,9 @@ export async function deleteProject(
   token: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await fetch(`http://localhost:3000/api/projects/${projectId}`, {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.projectById(projectId)), {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders(token),
     });
 
     return res.json();
@@ -574,5 +535,69 @@ export async function deleteProject(
       error: error instanceof Error ? error.message : 'Error al eliminar proyecto'
     };
   }
+}
+
+// Verificación de token
+export async function verifyToken(token: string): Promise<AuthResponse> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.me), {
+      headers: getAuthHeaders(token),
+    });
+
+    if (!res.ok) {
+      return {
+        success: false,
+        data: {
+          user: { id: '', email: '', profile: null, roles: [] },
+          token: ''
+        },
+        error: 'Invalid token'
+      };
+    }
+
+    const result = await res.json();
+    if (result.success && result.data) {
+      return {
+        success: true,
+        data: {
+          user: {
+            id: result.data.id,
+            email: result.data.email,
+            profile: result.data.profile || null,
+            roles: result.data.roles || []
+          },
+          token: token // Mantener el token original
+        }
+      };
+    }
+
+    return {
+      success: false,
+      data: {
+        user: { id: '', email: '', profile: null, roles: [] },
+        token: ''
+      },
+      error: result.error || 'Verification failed'
+    };
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return {
+      success: false,
+      data: {
+        user: { id: '', email: '', profile: null, roles: [] },
+        token: ''
+      },
+      error: 'Network error'
+    };
+  }
+}
+
+export async function forgotPassword(email: string): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.forgotPassword), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  return res.json();
 }
 

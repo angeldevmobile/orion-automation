@@ -4,9 +4,27 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
+// Tipos específicos para los bloques de contenido
+type TextBlock = {
+  type: 'text';
+  text: string;
+};
+
+type ImageBlock = {
+  type: 'image';
+  source: {
+    type: 'base64';
+    media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+    data: string;
+  };
+};
+
+// Tipo para el contenido de un mensaje
+export type MessageContent = string | Array<TextBlock | ImageBlock>;
+
 export interface ClaudeMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: MessageContent;
 }
 
 // System prompt base para Orion AI
@@ -46,10 +64,7 @@ export class ClaudeService {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
         system: systemPrompt || BASE_SYSTEM_PROMPT,
-        messages: messages.map(msg => ({
-          role: msg.role,
-          content: msg.content,
-        })),
+        messages: messages as Anthropic.MessageParam[], // Cast explícito
       });
 
       // Validar que existe contenido

@@ -119,7 +119,7 @@ export class AnalysisOrchestratorService {
             }))
           }));
 
-          console.log(`✅ Claude - Análisis profundo: ${deepResults.reduce((sum, r) => sum + r.issues.length, 0)} issues`);
+          console.log(`Claude - Análisis profundo: ${deepResults.reduce((sum, r) => sum + r.issues.length, 0)} issues`);
         } catch (error) {
           console.error('Error en análisis profundo (continuando):', error);
         }

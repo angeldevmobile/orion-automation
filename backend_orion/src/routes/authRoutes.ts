@@ -12,4 +12,8 @@ router.post('/login', (req, res) => authController.login(req, res));
 // Protected routes
 router.get('/me', authenticate, (req, res) => authController.me(req, res));
 
+router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
+router.post('/reset-password', (req, res) => authController.resetPassword(req, res));
+
+
 export default router;

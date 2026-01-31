@@ -22,8 +22,8 @@ export interface DeepAnalysisResult {
   summary: string;
   complexity: number;
   warnings: string[];
-  linesAnalyzed: number; // NUEVO: Para tracking
-  chunksProcessed: number; // NUEVO: Para debugging
+  linesAnalyzed: number; 
+  chunksProcessed: number; 
 }
 
 export class DeepCodeAnalysisService {
@@ -80,7 +80,7 @@ export class DeepCodeAnalysisService {
       const chunkLines = chunk.content.split('\n').length;
       totalLinesAnalyzed += chunkLines;
 
-      console.log(`🔍 Analizando chunk ${i + 1}/${chunks.length} (${chunkLines} líneas)...`);
+      console.log(`Analizando chunk ${i + 1}/${chunks.length} (${chunkLines} líneas)...`);
 
       const prompt = this.buildDeepPrompt(
         filePath, 
@@ -123,7 +123,6 @@ export class DeepCodeAnalysisService {
     };
   }
 
-  // NUEVO: Chunking por líneas (más preciso)
   private chunkContentByLines(
     content: string, 
     maxLinesPerChunk: number

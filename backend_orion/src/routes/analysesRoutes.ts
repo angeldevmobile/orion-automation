@@ -75,7 +75,7 @@ router.get('/:analysisId/artifacts', artifactController.getAnalysisArtifacts.bin
 // Decisiones de un análisis
 router.get('/:analysisId/decisions', decisionController.getAnalysisDecisions.bind(decisionController));
 
-// GET /api/analyses/:id - Get analysis by ID (debe ir al final para evitar conflictos)
+// GET /api/analyses/:id - Get analysis by ID 
 router.get('/:id', (req, res) => analysesController.getAnalysisById(req, res));
 
 // POST /api/analyses - Create new analysis

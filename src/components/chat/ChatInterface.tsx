@@ -7,8 +7,9 @@ import { Card } from '@/components/ui/card';
 import { Send, Bot, User, Sparkles, Loader2, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
-import { MarkdownMessage } from './MarkdownMessage';
+import { MarkdownMessage } from './markdownMessage';
 import { FileAttachment, type AttachedFile } from './FileAttachment';
+import { API_CONFIG, getApiUrl, getAuthHeaders, getAuthHeadersForUpload } from '@/config/apiConfig';
 
 interface Message {
   id: string;
@@ -60,6 +61,7 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [sendingFiles, setSendingFiles] = useState<AttachedFile[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId || null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,10 +77,8 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
   const loadConversation = useCallback(async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conversations/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(getApiUrl(API_CONFIG.endpoints.conversationById(id)), {
+        headers: getAuthHeaders(token || '')
       });
       
       if (!response.ok) throw new Error('Failed to load conversation');
@@ -106,10 +106,12 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
     }
   }, [toast]);
 
+  // ✅ Sincronizar conversationId del prop con el estado interno
   useEffect(() => {
     if (conversationId && conversationId !== currentConversationId) {
       loadConversation(conversationId);
-    } else if (!conversationId && currentConversationId) {
+    } else if (!conversationId && currentConversationId && conversationId !== undefined) {
+      // Solo resetear si conversationId cambió explícitamente a null
       setMessages(initialMessages);
       setCurrentConversationId(null);
     }
@@ -190,7 +192,8 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
 
     setMessages(prev => [...prev, userMessage]);
     const messageContent = input.trim();
-    const messageFiles = attachedFiles; 
+    const messageFiles = attachedFiles;
+    setSendingFiles(attachedFiles);
     setInput('');
     setAttachedFiles([]);
     setIsLoading(true);
@@ -198,8 +201,8 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
     try {
       const token = localStorage.getItem('token');
       const endpoint = currentConversationId
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/conversations/${currentConversationId}/send`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/conversations/send`;
+        ? API_CONFIG.endpoints.conversationSendMessage(currentConversationId)
+        : API_CONFIG.endpoints.sendMessage;
 
       // Crear FormData para enviar archivos
       const formData = new FormData();
@@ -209,12 +212,9 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
         formData.append('files', attachedFile.file);
       });
 
-      const response = await fetch(endpoint, {
+      const response = await fetch(getApiUrl(endpoint), {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-          // No establecer Content-Type, FormData lo hace automáticamente
-        },
+        headers: getAuthHeadersForUpload(token || ''),
         body: formData,
       });
 
@@ -228,7 +228,6 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
       if (!result.success) {
         throw new Error(result.error || 'Failed to send message');
       }
-
       if (!currentConversationId && result.data.conversationId) {
         setCurrentConversationId(result.data.conversationId);
         onConversationCreated?.(result.data.conversationId);
@@ -253,6 +252,7 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
       setMessages(prev => prev.filter(m => m.id !== userMessage.id));
     } finally {
       setIsLoading(false);
+      setSendingFiles([]);
     }
   };
 
@@ -286,76 +286,79 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4 max-w-4xl mx-auto">
-          {messages.map((message, index) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-3 animate-fade-in",
-                message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-              )}
-              style={{ animationDelay: `${index * 0.05}s` }}
-            >
-              <Avatar className={cn(
-                "h-8 w-8 shrink-0",
-                message.role === 'assistant' ? 'bg-primary/10' : 'bg-secondary'
-              )}>
-                <AvatarFallback className={cn(
-                  message.role === 'assistant' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'
-                )}>
-                  {message.role === 'assistant' ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
-                </AvatarFallback>
-              </Avatar>
-              <Card className={cn(
-                "p-4 max-w-[85%] shadow-sm transition-all duration-200",
-                message.role === 'user' 
-                  ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' 
-                  : 'bg-card rounded-2xl rounded-tl-sm'
-              )}>
-                {message.attachments && message.attachments.length > 0 && (
-                  <FileAttachment 
-                    files={message.attachments} 
-                    onRemove={() => {}} // Read-only en mensajes enviados
-                  />
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+          <div className="space-y-4 max-w-7xl mx-auto px-2">
+            {messages.map((message, index) => (
+              <div
+                key={message.id}
+                className={cn(
+                  "flex gap-3 animate-fade-in",
+                  message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                 )}
-                {message.role === 'assistant' ? (
-                  <MarkdownMessage content={message.content} />
-                ) : (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                )}
-                <p className={cn(
-                  "text-[10px] mt-2 opacity-60",
-                  message.role === 'user' ? 'text-right' : 'text-left'
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
+                <Avatar className={cn(
+                  "h-8 w-8 shrink-0",
+                  message.role === 'assistant' ? 'bg-primary/10' : 'bg-secondary'
                 )}>
-                  {message.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </Card>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex gap-3 animate-fade-in">
-              <Avatar className="h-8 w-8 bg-primary/10">
-                <AvatarFallback className="bg-primary/10 text-primary">
-                  <Bot className="h-4 w-4" />
-                </AvatarFallback>
-              </Avatar>
-              <Card className="p-3 bg-card rounded-2xl rounded-tl-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Analizando{attachedFiles.length > 0 ? ' archivos...' : '...'}</span>
-                </div>
-              </Card>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+                  <AvatarFallback className={cn(
+                    message.role === 'assistant' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'
+                  )}>
+                    {message.role === 'assistant' ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                  </AvatarFallback>
+                </Avatar>
+                <Card className={cn(
+                  "p-4 shadow-sm transition-all duration-200",
+                  "max-w-[85%] w-fit",
+                  message.role === 'user' 
+                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm' 
+                    : 'bg-card rounded-2xl rounded-tl-sm'
+                )}>
+                  {message.attachments && message.attachments.length > 0 && (
+                    <FileAttachment 
+                      files={message.attachments} 
+                      onRemove={() => {}} // Read-only en mensajes enviados
+                    />
+                  )}
+                  {message.role === 'assistant' ? (
+                    <MarkdownMessage content={message.content} />
+                  ) : (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  )}
+                  <p className={cn(
+                    "text-[10px] mt-2 opacity-60",
+                    message.role === 'user' ? 'text-right' : 'text-left'
+                  )}>
+                    {message.timestamp.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </Card>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex gap-3 animate-fade-in">
+                <Avatar className="h-8 w-8 bg-primary/10">
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    <Bot className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+                <Card className="p-3 bg-card rounded-2xl rounded-tl-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Analizando{sendingFiles.length > 0 ? ' archivos...' : '...'}</span>
+                  </div>
+                </Card>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Quick Actions */}
       {messages.length === 1 && (
         <div className="px-4 pb-2">
-          <div className="flex flex-wrap gap-2 max-w-4xl mx-auto animate-fade-in">
+          <div className="flex flex-wrap gap-2 max-w-7xl mx-auto animate-fade-in">
             {quickActions.map((action) => (
               <Button
                 key={action.label}
@@ -372,9 +375,9 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="p-4 border-t border-border bg-card">
-        <div className="max-w-4xl mx-auto">
+      {/* Input Area - Fixed at bottom */}
+      <div className="p-4 border-t border-border bg-card shrink-0">
+        <div className="max-w-7xl mx-auto">
           {/* File Attachments Preview */}
           {attachedFiles.length > 0 && (
             <FileAttachment files={attachedFiles} onRemove={handleRemoveFile} />

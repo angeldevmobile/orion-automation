@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { API_CONFIG, getApiUrl, getAuthHeaders } from '@/config/apiConfig';
 
 interface ChatSession {
   id: string;
@@ -60,10 +61,8 @@ export function ChatHistory({ onNewChat, onSelectChat, activeChat }: ChatHistory
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conversations`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(getApiUrl(API_CONFIG.endpoints.conversations), {
+        headers: getAuthHeaders(token)
       });
       
       if (!response.ok) {
@@ -98,14 +97,19 @@ export function ChatHistory({ onNewChat, onSelectChat, activeChat }: ChatHistory
     loadConversations();
   }, [loadConversations]);
 
+  // ✅ Recargar lista cuando cambia activeChat (nueva conversación creada)
+  useEffect(() => {
+    if (activeChat) {
+      loadConversations();
+    }
+  }, [activeChat, loadConversations]);
+
   const handleDeleteChat = async (id: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conversations/${id}`, {
+      const response = await fetch(getApiUrl(API_CONFIG.endpoints.conversationById(id)), {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: getAuthHeaders(token || '')
       });
       
       if (!response.ok) {

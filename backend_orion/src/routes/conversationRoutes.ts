@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ConversationsController } from '../controllers/conversationController.js';
+import { ConversationsController, uploadMiddleware } from '../controllers/conversationController.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -17,11 +17,11 @@ router.get('/:id', (req, res) => conversationsController.getConversationById(req
 // POST /api/conversations - Create new conversation
 router.post('/', (req, res) => conversationsController.createConversation(req, res));
 
-// POST /api/conversations/send - Send message (creates conversation if needed)
-router.post('/send', (req, res) => conversationsController.sendMessage(req, res));
+// POST /api/conversations/send - Send message (creates conversation if needed) - CON UPLOAD
+router.post('/send', uploadMiddleware, (req, res) => conversationsController.sendMessage(req, res));
 
-// POST /api/conversations/:id/send - Send message to existing conversation
-router.post('/:id/send', (req, res) => conversationsController.sendMessage(req, res));
+// POST /api/conversations/:id/send - Send message to existing conversation - CON UPLOAD
+router.post('/:id/send', uploadMiddleware, (req, res) => conversationsController.sendMessage(req, res));
 
 // POST /api/conversations/:id/messages - Add message to conversation (manual)
 router.post('/:id/messages', (req, res) => conversationsController.addMessage(req, res));

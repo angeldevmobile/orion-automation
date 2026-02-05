@@ -199,37 +199,27 @@ export class AuthService {
     try {
       console.log('Enviando email de recuperación a:', user.email);
       
-      let htmlContent: string;
+      // Obtener HTML desde el frontend
+      const frontendResponse = await fetch(`${process.env.FRONTEND_URL}/api/render-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'password-reset',
+          resetUrl,
+          userEmail: email,
+        }),
+      });
 
-      try {
-        // Intentar obtener HTML desde el frontend
-        const frontendResponse = await fetch(`${process.env.FRONTEND_URL}/api/render-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'password-reset',
-            resetUrl,
-            userEmail: email,
-          }),
-        });
-
-        if (frontendResponse.ok) {
-          const { html } = await frontendResponse.json();
-          htmlContent = html;
-          console.log('HTML obtenido del frontend exitosamente');
-        } else {
-          console.log('Frontend no disponible, usando fallback');
-          htmlContent = this.generateFallbackEmail(resetUrl, email);
-        }
-      } catch (fetchError) {
-        console.log('Error conectando con frontend, usando fallback:', fetchError);
-        htmlContent = this.generateFallbackEmail(resetUrl, email);
+      if (!frontendResponse.ok) {
+        throw new Error('Frontend no disponible para renderizar email');
       }
 
-      // Enviar email con el HTML (ya sea del frontend o fallback)
-      await this.emailService.sendPasswordResetEmail(user.email, resetToken, htmlContent);
+      const { html } = await frontendResponse.json();
+      
+      // Enviar email con el HTML del frontend
+      await this.emailService.sendPasswordResetEmail(user.email, resetToken, html);
       console.log('Email de recuperación enviado exitosamente');
       
     } catch (error) {
@@ -244,7 +234,8 @@ export class AuthService {
         }
       });
       
-      // No lanzar error para no revelar si el email existe
+      // Lanzar el error para que el controller lo maneje
+      throw new Error('Error enviando email de recuperación');
     }
 
     return { 
@@ -284,74 +275,5 @@ export class AuthService {
     } catch (error) {
       throw new Error('Invalid or expired reset token');
     }
-  }
-
-  // Método para generar HTML fallback si el frontend no responde
-  private generateFallbackEmail(resetUrl: string, email: string): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>Orion AI - Recuperar Contraseña</title>
-        </head>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #667eea; margin-bottom: 10px;">🌟 Orion AI</h1>
-            <p style="color: #666; margin: 0;">Inteligencia Artificial Avanzada</p>
-          </div>
-
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 10px; border: 1px solid #e9ecef;">
-            <h2 style="color: #333; margin-top: 0;">Recuperar Contraseña</h2>
-            
-            <p>Hola,</p>
-            
-            <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta: <strong>${email}</strong></p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="
-                display: inline-block;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                padding: 15px 30px;
-                text-decoration: none;
-                border-radius: 25px;
-                font-weight: bold;
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-              ">
-                🔐 Restablecer mi Contraseña
-              </a>
-            </div>
-            
-            <p style="font-size: 14px; color: #666;">
-              Si tienes problemas con el botón, copia y pega este enlace en tu navegador:
-            </p>
-            
-            <div style="background: #e9ecef; padding: 15px; border-radius: 5px; word-break: break-all; font-size: 14px;">
-              <a href="${resetUrl}" style="color: #667eea;">${resetUrl}</a>
-            </div>
-            
-            <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
-              <p style="margin: 0; font-size: 14px; color: #856404;">
-                <strong>⚠️ Importante:</strong> Este enlace expirará en 1 hora por seguridad. Si no solicitaste este cambio, ignora este correo y tu cuenta permanecerá segura.
-              </p>
-            </div>
-          </div>
-
-          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-            <p style="color: #666; font-size: 14px; margin: 0;">
-              ¿Necesitas ayuda? Contáctanos en 
-              <a href="mailto:support@orion-ai.com" style="color: #667eea;">support@orion-ai.com</a>
-            </p>
-            <p style="color: #999; font-size: 12px; margin-top: 15px;">
-              © ${new Date().getFullYear()} Orion AI - Tecnología del Futuro<br>
-              Orion AI Labs • Perú, Lima
-            </p>
-          </div>
-
-        </body>
-      </html>
-    `;
   }
 }

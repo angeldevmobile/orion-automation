@@ -601,3 +601,14 @@ export async function forgotPassword(email: string): Promise<{ success: boolean;
   return res.json();
 }
 
+export async function resetPassword(
+  token: string, 
+  newPassword: string
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  const res = await fetch(getApiUrl(API_CONFIG.endpoints.resetPassword), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  return res.json();
+}

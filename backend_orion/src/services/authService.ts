@@ -2,6 +2,7 @@ import { prisma } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { EmailService } from './emailService.js';
+import { resetPasswordEmailTemplate } from '../utils/email_templates.js';
 
 interface RegisterData {
   email: string;
@@ -167,9 +168,46 @@ export class AuthService {
     }
   }
 
+  // Método helper para extraer nombre del email
+  private getUserNameFromEmail(email: string): string {
+    // Validar que el email tenga formato básico válido
+    if (!email || !email.includes('@')) {
+      return 'Usuario';
+    }
+
+    const emailParts = email.split('@');
+    const localPart = emailParts[0];
+    
+    // Validar que la parte local existe y no está vacía
+    if (!localPart || localPart.length === 0) {
+      return 'Usuario';
+    }
+
+    // Dividir por puntos, guiones o guiones bajos y tomar la primera parte
+    const nameParts = localPart.split(/[._-]/);
+    const namePart = nameParts[0];
+    
+    // Validar que la parte del nombre existe y no está vacía
+    if (!namePart || namePart.length === 0) {
+      return 'Usuario';
+    }
+
+    // Capitalizar primera letra
+    const capitalizedName = namePart.charAt(0).toUpperCase() + namePart.slice(1).toLowerCase();
+    
+    // Validar que el nombre parece válido (más de 2 caracteres y no contiene números)
+    if (capitalizedName.length > 2 && !/\d/.test(capitalizedName)) {
+      return capitalizedName;
+    }
+    
+    // Fallback genérico
+    return 'Usuario';
+  }
+
   async requestPasswordReset(email: string) {
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: { profile: true }
     });
 
     if (!user) {
@@ -193,33 +231,40 @@ export class AuthService {
       }
     });
 
+    // Obtener nombre del usuario con validaciones de seguridad
+    let userName = 'Usuario';
+    
+    if (user.profile?.fullName) {
+      const fullNameTrimmed = user.profile.fullName.trim();
+      
+      if (fullNameTrimmed.length > 0) {
+        const firstName = fullNameTrimmed.split(' ')[0];
+        
+        if (firstName && firstName.length > 0) {
+          userName = firstName;
+        } else {
+          userName = this.getUserNameFromEmail(email);
+        }
+      } else {
+        userName = this.getUserNameFromEmail(email);
+      }
+    } else {
+      // Si no tiene nombre en el perfil, extraer del email
+      userName = this.getUserNameFromEmail(email);
+    }
+
     // Crear URL de reset
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     try {
       console.log('Enviando email de recuperación a:', user.email);
+      console.log('Nombre del usuario:', userName);
       
-      // Obtener HTML desde el frontend
-      const frontendResponse = await fetch(`${process.env.FRONTEND_URL}/api/render-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'password-reset',
-          resetUrl,
-          userEmail: email,
-        }),
-      });
-
-      if (!frontendResponse.ok) {
-        throw new Error('Frontend no disponible para renderizar email');
-      }
-
-      const { html } = await frontendResponse.json();
+      // ✅ Generar HTML directamente en el backend
+      const htmlContent = resetPasswordEmailTemplate(resetUrl, userName);
       
-      // Enviar email con el HTML del frontend
-      await this.emailService.sendPasswordResetEmail(user.email, resetToken, html);
+      // Enviar email
+      await this.emailService.sendPasswordResetEmail(user.email, resetToken, htmlContent);
       console.log('Email de recuperación enviado exitosamente');
       
     } catch (error) {

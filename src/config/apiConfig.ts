@@ -8,6 +8,8 @@ export const API_CONFIG = {
     login: '/api/auth/login',
     register: '/api/auth/register',
     me: '/api/auth/me',
+    forgotPassword: '/api/auth/forgot-password',
+    resetPassword: '/api/auth/reset-password',
     
     // Health
     health: '/api/health',
@@ -39,7 +41,6 @@ export const API_CONFIG = {
     conversationById: (id: string) => `/api/conversations/${id}`,
     sendMessage: '/api/conversations/send',
     conversationSendMessage: (id: string) => `/api/conversations/${id}/send`,
-    forgotPassword: "/api/auth/forgot-password",
   },
 } as const;
 

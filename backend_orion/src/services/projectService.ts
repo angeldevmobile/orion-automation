@@ -2,7 +2,7 @@ import { prisma } from '../config/database.js';
 import type { Prisma } from '@prisma/client';
 import path from 'path';
 import fs from 'fs';
-import AdmZip from 'adm-zip'; 
+import AdmZip from 'adm-zip';
 
 interface CreateProjectData {
   name: string;
@@ -67,9 +67,9 @@ export class ProjectsService {
       data: {
         userId,
         name: data.name,
-        description: data.description ?? null, // <-- null en vez de undefined
+        description: data.description ?? null, 
         type: data.type,
-        settings: data.settings ?? {} // Usa objeto vacío si no hay settings
+        settings: data.settings ?? {} 
       }
     });
 
@@ -133,7 +133,6 @@ export class ProjectsService {
   }
 
   async uploadProjectFiles(projectId: string, userId: string, files: Express.Multer.File[]) {
-    // Verificar que el proyecto pertenece al usuario
     const project = await prisma.project.findFirst({
       where: { id: projectId, userId }
     });
@@ -142,9 +141,9 @@ export class ProjectsService {
       throw new Error('Project not found');
     }
 
-    const allFiles: Express.Multer.File[] = [];
+    const sources = [];
+    let totalFileCount = 0;
 
-    // Procesar archivos ZIP
     for (const file of files) {
       if (file.mimetype === 'application/zip' || file.originalname.endsWith('.zip')) {
         try {
@@ -157,45 +156,57 @@ export class ProjectsService {
             fs.mkdirSync(extractDir, { recursive: true });
           }
 
-          // Extraer archivos del ZIP
+          let extractedCount = 0;
+
           for (const entry of zipEntries) {
             if (!entry.isDirectory) {
-              const extractedPath = path.join(extractDir, entry.entryName);
-              const extractedDir = path.dirname(extractedPath);
-              
-              if (!fs.existsSync(extractedDir)) {
-                fs.mkdirSync(extractedDir, { recursive: true });
+              // Filtrar archivos no deseados
+              if (entry.entryName.includes('node_modules/') ||
+                entry.entryName.includes('.git/') ||
+                entry.entryName.startsWith('__MACOSX/') ||
+                entry.entryName.includes('.DS_Store')) {
+                continue;
               }
 
-              zip.extractEntryTo(entry, extractedDir, false, true);
+              const extractedPath = path.join(extractDir, entry.entryName);
+              const extractedFileDir = path.dirname(extractedPath);
 
-              // Agregar archivo extraído a la lista
-              allFiles.push({
-                ...file,
-                path: extractedPath,
-                originalname: entry.entryName,
-                filename: path.basename(extractedPath),
-                mimetype: 'application/octet-stream',
-                size: entry.header.size
-              } as Express.Multer.File);
+              if (!fs.existsSync(extractedFileDir)) {
+                fs.mkdirSync(extractedFileDir, { recursive: true });
+              }
+
+              fs.writeFileSync(extractedPath, entry.getData());
+              extractedCount++;
             }
           }
 
-          // Eliminar archivo ZIP original
+          // Esto permite que readProjectFiles lo lea recursivamente
+          const source = await prisma.projectSource.create({
+            data: {
+              projectId,
+              sourceType: 'local',  
+              sourceName: file.originalname.replace('.zip', ''),
+              sourceUrl: extractDir,  
+              metadata: {
+                originalZipName: file.originalname,
+                extractedFiles: extractedCount,
+                uploadedAt: new Date().toISOString()
+              }
+            }
+          });
+
+          sources.push(source);
+          totalFileCount += extractedCount;
+
+          // Eliminar ZIP original
           fs.unlinkSync(file.path);
         } catch (error) {
           console.error('Error extracting ZIP:', error);
           throw new Error(`Error al procesar archivo ZIP: ${file.originalname}`);
         }
       } else {
-        allFiles.push(file);
-      }
-    }
-
-    // Crear registros de ProjectSource para cada archivo
-    const sources = await Promise.all(
-      allFiles.map(file => 
-        prisma.projectSource.create({
+        // Archivos individuales
+        const source = await prisma.projectSource.create({
           data: {
             projectId,
             sourceType: 'file',
@@ -209,23 +220,25 @@ export class ProjectsService {
               uploadedAt: new Date().toISOString()
             }
           }
-        })
-      )
-    );
+        });
 
-    // Actualizar contador de archivos en el proyecto
+        sources.push(source);
+        totalFileCount++;
+      }
+    }
+
+    // Actualizar contador de archivos
     await prisma.project.update({
       where: { id: projectId },
       data: {
         fileCount: {
-          increment: allFiles.length
+          increment: totalFileCount
         }
       }
     });
 
     return sources;
   }
-
   async getProjectFiles(projectId: string, userId: string) {
     const project = await prisma.project.findFirst({
       where: { id: projectId, userId }
@@ -236,7 +249,7 @@ export class ProjectsService {
     }
 
     const files = await prisma.projectSource.findMany({
-      where: { 
+      where: {
         projectId,
         sourceType: 'file'
       },

@@ -81,15 +81,18 @@ export function DiagramsPanel({ projectId }: DiagramsPanelProps) {
 
         if (mermaid) setMermaidCode(mermaid.content);
         if (d2) setD2Code(d2.content);
+
+        // Solo intentar cargar isometric si hay diagramas generados
+        if (diagramsData.length > 0) {
+          // Cargar imagen isométrica
+          const imageUrl = await getIsometricDiagramImage(projectId, token);
+          if (imageUrl) setIsometricImageUrl(imageUrl);
+
+          // Cargar HTML isométrico
+          const html = await getIsometricDiagramHTML(projectId, token);
+          if (html) setIsometricHTML(html);
+        }
       }
-
-      // Cargar imagen isométrica
-      const imageUrl = await getIsometricDiagramImage(projectId, token);
-      if (imageUrl) setIsometricImageUrl(imageUrl);
-
-      // Cargar HTML isométrico
-      const html = await getIsometricDiagramHTML(projectId, token);
-      if (html) setIsometricHTML(html);
     } catch (error) {
       console.error("Error loading diagrams:", error);
     }
@@ -101,7 +104,7 @@ export function DiagramsPanel({ projectId }: DiagramsPanelProps) {
     setIsGenerating(true);
     try {
       toast({
-        title: "🏗️ Generando diagramas",
+        title: "Generando diagramas",
         description: "La IA está creando diagramas de arquitectura...",
       });
 
@@ -109,7 +112,7 @@ export function DiagramsPanel({ projectId }: DiagramsPanelProps) {
 
       if (response.success) {
         toast({
-          title: "✅ Diagramas generados",
+          title: "Diagramas generados",
           description: "Diagramas isométricos, Mermaid y D2 listos",
         });
         await loadDiagrams();

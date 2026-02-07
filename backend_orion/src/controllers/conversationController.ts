@@ -54,6 +54,10 @@ type ContentBlock =
 export class ConversationsController {
   async getUserConversations(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const userId = req.user.id;
       const projectId = req.query.projectId as string;
 
@@ -73,6 +77,10 @@ export class ConversationsController {
 
   async getConversationById(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -92,6 +100,10 @@ export class ConversationsController {
 
   async createConversation(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const userId = req.user.id;
       const { title, projectId } = req.body;
 
@@ -111,6 +123,10 @@ export class ConversationsController {
 
   async sendMessage(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       console.log('req.body:', req.body);
       console.log('req.files:', req.files);
       console.log('Content-Type:', req.headers['content-type']);
@@ -260,6 +276,10 @@ export class ConversationsController {
 
   async addMessage(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
       const { role, content, metadata } = req.body;
@@ -287,6 +307,10 @@ export class ConversationsController {
 
   async updateConversation(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
       const { title } = req.body;
@@ -307,6 +331,10 @@ export class ConversationsController {
 
   async deleteConversation(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 

@@ -1,6 +1,10 @@
 import OpenAI from 'openai';
 import type { CodeIndex } from './analyses/codeScanner.js';
 
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('[GPTService] ADVERTENCIA: OPENAI_API_KEY no configurada. El análisis con GPT no funcionará.');
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -89,15 +93,37 @@ Responde SOLO en JSON:
 
 IMPORTANTE: Responde SOLO en español. No incluyas texto ni recomendaciones en inglés.`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
-      max_tokens: 2000
-    });
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.3,
+        max_tokens: 2000
+      });
 
-    const content = response.choices[0]?.message?.content || '{}';
-    return this.parseStructuralResponse(content);
+      const content = response.choices[0]?.message?.content || '{}';
+      return this.parseStructuralResponse(content);
+    } catch (error: unknown) {
+      console.error('[GPTService] Error en analyzeStructure:', error);
+      
+      if (error instanceof OpenAI.APIError) {
+        if (error.status === 429) {
+          throw new Error('Límite de solicitudes a OpenAI alcanzado. Intente en unos minutos.');
+        }
+        if (error.status === 401) {
+          throw new Error('API Key de OpenAI inválida o sin créditos.');
+        }
+      }
+
+      // Retornar fallback en vez de fallar
+      return {
+        understanding: 'No se pudo analizar la estructura (error de API)',
+        suggestedFiles: [],
+        projectType: 'Unknown',
+        techStack: [],
+        complexity: 'medium'
+      };
+    }
   }
 
   /**
@@ -115,19 +141,36 @@ IMPORTANTE: Responde SOLO en español. No incluyas texto ni recomendaciones en i
       quality: this.buildQualityPrompt(index)
     };
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompts[dimension] }],
-      temperature: 0.3,
-      max_tokens: 2000
-    });
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompts[dimension] }],
+        temperature: 0.3,
+        max_tokens: 2000
+      });
 
-    const content = response.choices[0]?.message?.content || '{}';
-    
-    // DEBUG: Ver respuesta raw de GPT
-    console.log(`🔍 [${dimension}] GPT Response:`, content);
-    
-    return this.parseDimensionResponse(content, dimension);
+      const content = response.choices[0]?.message?.content || '{}';
+      console.log(`[${dimension}] GPT Response:`, content);
+      return this.parseDimensionResponse(content, dimension);
+    } catch (error: unknown) {
+      console.error(`[GPTService] Error en analyzeDimension (${dimension}):`, error);
+
+      if (error instanceof OpenAI.APIError && error.status === 429) {
+        throw new Error('Límite de solicitudes a OpenAI alcanzado. Intente en unos minutos.');
+      }
+
+      // Retornar fallback
+      return {
+        dimension,
+        score: 0,
+        issues: [{
+          severity: 'low',
+          description: `No se pudo analizar ${dimension} (error de API)`,
+          suggestion: 'Reintentar el análisis más tarde'
+        }],
+        recommendations: [`Reintentar análisis de ${dimension} manualmente`]
+      };
+    }
   }
 
   private buildArchitecturePrompt(index: CodeIndex): string {
@@ -329,9 +372,11 @@ IMPORTANTE:
       const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
       const parsed = JSON.parse(jsonText);
 
-      // DEBUG: Ver qué issues devuelve GPT
-      console.log(`📊 [${dimension}] Issues recibidos:`, JSON.stringify(parsed.issues, null, 2));
-      console.log(`📋 [${dimension}] Recommendations:`, JSON.stringify(parsed.recommendations, null, 2));
+      // Solo loguear en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[${dimension}] Issues recibidos:`, JSON.stringify(parsed.issues, null, 2));
+        console.log(`[${dimension}] Recommendations:`, JSON.stringify(parsed.recommendations, null, 2));
+      }
 
       return {
         dimension,

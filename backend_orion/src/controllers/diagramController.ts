@@ -10,10 +10,6 @@ const prisma = new PrismaClient();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-interface AuthRequest extends Request {
-  userId?: string;
-}
-
 export class DiagramController {
   private diagramService = new DiagramService();
   private advancedDiagramService = new AdvancedDiagramService();
@@ -22,10 +18,10 @@ export class DiagramController {
    * POST /api/diagrams/project/:projectId/generate
    * Genera diagramas usando IA + renderizado profesional
    */
-  async generateDiagrams(req: AuthRequest, res: Response) {
+  async generateDiagrams(req: Request, res: Response) {
     try {
       const projectId = req.params.projectId as string;
-      const userId = req.userId;
+      const userId = req.user?.id;  
       const { type = 'architecture' } = req.body;
 
       if (!userId || !projectId) {
@@ -111,7 +107,7 @@ export class DiagramController {
       // 6e. Isoflow → PNG (Puppeteer)
       const isoPngPath = path.join(outputDir, 'architecture_isometric.png');
       await this.advancedDiagramService.generateIsoflowImage(isoflowModel, isoPngPath).catch(err => {
-        console.warn('⚠️ No se pudo generar PNG isométrico:', err.message);
+        console.warn('No se pudo generar PNG isométrico:', err.message);
       });
 
       // ═══════════════════════════════════════════════════
@@ -173,10 +169,10 @@ export class DiagramController {
   /**
    * GET /api/diagrams/project/:projectId
    */
-  async getProjectDiagrams(req: AuthRequest, res: Response) {
+  async getProjectDiagrams(req: Request, res: Response) {
     try {
       const projectId = req.params.projectId as string;
-      const userId = req.userId;
+      const userId = req.user?.id;  // ← CAMBIO 3: era req.userId
 
       if (!userId || !projectId) {
         return res.status(401).json({ success: false, error: 'No autenticado' });
@@ -224,7 +220,7 @@ export class DiagramController {
   /**
    * GET /api/diagrams/project/:projectId/isometric/image
    */
-  async getIsometricImage(req: AuthRequest, res: Response) {
+  async getIsometricImage(req: Request, res: Response) {
     try {
       const projectId = req.params.projectId as string;
       if (!projectId) {
@@ -246,7 +242,7 @@ export class DiagramController {
   /**
    * GET /api/diagrams/project/:projectId/isometric/html
    */
-  async getIsometricHTML(req: AuthRequest, res: Response) {
+  async getIsometricHTML(req: Request, res: Response) {
     try {
       const projectId = req.params.projectId as string;
       if (!projectId) {
@@ -270,7 +266,7 @@ export class DiagramController {
    * GET /api/diagrams/project/:projectId/image/:format
    * Sirve imágenes PNG de Mermaid o D2
    */
-  async getDiagramImage(req: AuthRequest, res: Response) {
+  async getDiagramImage(req: Request, res: Response) {
     try {
       const projectId = req.params.projectId as string;
       const format = req.params.format as string; // 'mermaid' | 'd2'

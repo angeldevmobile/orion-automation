@@ -41,6 +41,14 @@ export class DocumentationService {
    */
   async generateReadme(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+
+    if (Object.keys(filesContent).length === 0) {
+      throw new Error(
+        'No se encontraron archivos del proyecto para analizar. Verifique que el proyecto tenga archivos fuente cargados y que las rutas sean accesibles.'
+      );
+    }
+
+    const prioritizedFiles = this.prioritizeFiles(filesContent);
     const currentDate = getFormattedDate();
     const fullDate = getFullFormattedDate();
 
@@ -63,9 +71,9 @@ export class DocumentationService {
 - Descripción: ${project.description || 'No disponible'}
 
 **ARCHIVOS DEL PROYECTO (análisis exhaustivo):**
-${Object.entries(filesContent)
-        .slice(0, 20)
-        .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 1500)}\n\`\`\``)
+${prioritizedFiles
+        .slice(0, 25)
+        .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 3000)}\n\`\`\``)
         .join('\n\n')}
 
 **REGLAS DE DOCUMENTACIÓN ESTRICTAS:**
@@ -335,6 +343,13 @@ IMPORTANTE:
    */
   async generateArchitecture(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+
+    // AGREGAR: Validación
+    if (Object.keys(filesContent).length === 0) {
+      throw new Error(
+        'No se encontraron archivos del proyecto para analizar. Verifique que el proyecto tenga archivos fuente cargados y que las rutas sean accesibles.'
+      );
+    }
     const currentDate = getFormattedDate();
     const fullDate = getFullFormattedDate();
 
@@ -400,9 +415,9 @@ ${middlewareFiles
         .join('\n\n')}
 
 ### Todos los archivos:
-${Object.entries(filesContent)
-        .slice(0, 15)
-        .map(([name, content]) => `#### ${name}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\``)
+${this.prioritizeFiles(filesContent)
+        .slice(0, 20)
+        .map(([name, content]) => `#### ${name}\n\`\`\`\n${content.slice(0, 3000)}\n\`\`\``)
         .join('\n\n')}
 
 **ESTRUCTURA REQUERIDA (cada sección debe ser EXHAUSTIVA):**
@@ -785,6 +800,12 @@ IMPORTANTE:
    */
   async generateApiDocs(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+
+    if (Object.keys(filesContent).length === 0) {
+      throw new Error(
+        'No se encontraron archivos del proyecto para analizar. Verifique que el proyecto tenga archivos fuente cargados y que las rutas sean accesibles.'
+      );
+    }
     const currentDate = getFormattedDate();
     const fullDate = getFullFormattedDate();
 
@@ -850,9 +871,9 @@ ${modelFiles
         .join('\n\n')}
 
 **TODOS LOS ARCHIVOS (contexto adicional):**
-${Object.entries(filesContent)
-        .slice(0, 15)
-        .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 1000)}\n\`\`\``)
+${this.prioritizeFiles(filesContent)
+        .slice(0, 20)
+        .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\``)
         .join('\n\n')}
 
 **ESTRUCTURA REQUERIDA (EXHAUSTIVA - cada endpoint debe estar completamente documentado):**
@@ -1352,6 +1373,12 @@ IMPORTANTE:
    */
   async generateContributing(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+
+    if (Object.keys(filesContent).length === 0) {
+      throw new Error(
+        'No se encontraron archivos del proyecto para analizar. Verifique que el proyecto tenga archivos fuente cargados y que las rutas sean accesibles.'
+      );
+    }
     const currentDate = getFormattedDate();
     const fullDate = getFullFormattedDate();
 
@@ -1729,16 +1756,59 @@ IMPORTANTE: Personaliza basándote en las herramientas REALES del proyecto. Sin 
     const files: Record<string, string> = {};
 
     for (const source of sources) {
-      if (source.sourceType === 'local' && source.sourceUrl) {
-        try {
-          await this.readDirectoryRecursive(source.sourceUrl, files, '', 0, 3);
-        } catch (error) {
-          console.error(
-            `Error leyendo archivos de ${source.sourceName}:`,
-            error
-          );
+      if (!source.sourceUrl) continue;
+
+      try {
+        if (source.sourceType === 'local' || source.sourceType === 'directory') {
+          // Fuente es un directorio: leer recursivamente
+          const stat = await fs.stat(source.sourceUrl);
+          if (stat.isDirectory()) {
+            await this.readDirectoryRecursive(source.sourceUrl, files, '', 0, 3);
+          } else if (stat.isFile() && this.isRelevantFile(path.basename(source.sourceUrl))) {
+            const content = await fs.readFile(source.sourceUrl, 'utf-8');
+            files[source.sourceName || path.basename(source.sourceUrl)] = content;
+          }
+        } else if (source.sourceType === 'file') {
+          // Fuente es un archivo individual subido
+          const filePath = source.sourceUrl;
+
+          // Verificar si el archivo existe
+          try {
+            await fs.access(filePath);
+          } catch {
+            console.warn(`Archivo no encontrado: ${filePath}, saltando...`);
+            continue;
+          }
+
+          const stat = await fs.stat(filePath);
+
+          if (stat.isDirectory()) {
+            // Si el sourceUrl apunta a un directorio extraído de un ZIP
+            await this.readDirectoryRecursive(filePath, files, '', 0, 3);
+          } else if (stat.isFile()) {
+            const fileName = source.sourceName || path.basename(filePath);
+
+            // Solo leer archivos relevantes para documentación
+            if (this.isRelevantFile(fileName)) {
+              const content = await fs.readFile(filePath, 'utf-8');
+              files[fileName] = content;
+            }
+          }
         }
+      } catch (error) {
+        console.error(
+          `Error leyendo archivos de ${source.sourceName}:`,
+          error
+        );
       }
+    }
+
+    // Log para depuración
+    console.log(`[DocumentationService] Archivos leídos: ${Object.keys(files).length}`);
+    if (Object.keys(files).length === 0) {
+      console.warn('[DocumentationService] ADVERTENCIA: No se leyeron archivos del proyecto. La documentación puede ser genérica.');
+    } else {
+      console.log(`[DocumentationService] Archivos: ${Object.keys(files).join(', ')}`);
     }
 
     return files;
@@ -1802,6 +1872,54 @@ IMPORTANTE: Personaliza basándote en las herramientas REALES del proyecto. Sin 
       relevantExtensions.some((ext) => filename.endsWith(ext)) &&
       !irrelevantFiles.includes(filename)
     );
+  }
+
+  /**
+   * Prioriza archivos más importantes para el contexto del prompt
+   */
+  private prioritizeFiles(filesContent: Record<string, string>): [string, string][] {
+    const priorityOrder = [
+      'package.json',
+      'tsconfig.json',
+      '.env.example',
+      '.env',
+    ];
+
+    const priorityPatterns = [
+      /route/i,
+      /controller/i,
+      /router/i,
+      /service/i,
+      /middleware/i,
+      /auth/i,
+      /app\.(ts|js)$/i,
+      /index\.(ts|js)$/i,
+      /server\.(ts|js)$/i,
+      /main\.(ts|js)$/i,
+      /schema\.prisma$/i,
+      /model/i,
+      /config/i,
+    ];
+
+    const entries = Object.entries(filesContent);
+
+    // Separar en categorías de prioridad
+    const high: [string, string][] = [];
+    const medium: [string, string][] = [];
+    const low: [string, string][] = [];
+
+    for (const entry of entries) {
+      const [name] = entry;
+      if (priorityOrder.includes(name)) {
+        high.push(entry);
+      } else if (priorityPatterns.some(p => p.test(name))) {
+        medium.push(entry);
+      } else {
+        low.push(entry);
+      }
+    }
+
+    return [...high, ...medium, ...low];
   }
 
   private async getPrismaSchema(): Promise<string> {

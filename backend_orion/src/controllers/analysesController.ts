@@ -6,6 +6,10 @@ const analysesService = new AnalysesService();
 export class AnalysesController {
   async getProjectAnalyses(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.projectId as string;
       const userId = req.user.id;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
@@ -26,6 +30,10 @@ export class AnalysesController {
 
   async getAnalysisById(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -45,6 +53,10 @@ export class AnalysesController {
 
   async createAnalysis(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const userId = req.user.id;
       const {
         projectId,
@@ -99,6 +111,10 @@ export class AnalysesController {
 
   async analyzeWithClaude(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.projectId as string;
       const userId = req.user.id;
 
@@ -129,6 +145,10 @@ export class AnalysesController {
 
   async analyzeDeep(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.projectId as string;
       const { deepFiles } = req.body;
       const userId = req.user.id;
@@ -180,6 +200,10 @@ export class AnalysesController {
 
   async getAnalysisStats(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.projectId as string;
       const userId = req.user.id;
 

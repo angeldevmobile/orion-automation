@@ -7,6 +7,10 @@ const projectsService = new ProjectsService();
 export class ProjectsController {
   async getUserProjects(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const userId = req.user.id;
       const projects = await projectsService.getUserProjects(userId);
 
@@ -24,6 +28,10 @@ export class ProjectsController {
 
   async getProjectById(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -43,6 +51,10 @@ export class ProjectsController {
 
   async createProject(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const userId = req.user.id;
       const { name, description, type, settings } = req.body;
 
@@ -74,6 +86,10 @@ export class ProjectsController {
 
   async updateProject(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -93,6 +109,10 @@ export class ProjectsController {
 
   async deleteProject(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -112,6 +132,10 @@ export class ProjectsController {
 
   async getProjectStats(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -131,6 +155,10 @@ export class ProjectsController {
 
   async addProjectSource(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const id = req.params.id as string;
       const userId = req.user.id;
 
@@ -150,6 +178,10 @@ export class ProjectsController {
 
   async uploadFiles(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.id as string;
       const userId = req.user.id;
       const files = req.files as Express.Multer.File[];
@@ -180,6 +212,10 @@ export class ProjectsController {
 
   async getProjectFiles(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.id as string;
       const userId = req.user.id;
 
@@ -199,6 +235,10 @@ export class ProjectsController {
 
   async deleteFile(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
       const projectId = req.params.id as string;
       const fileId = req.params.fileId as string;
       const userId = req.user.id;
@@ -220,7 +260,11 @@ export class ProjectsController {
   // Obtener historial de acciones del proyecto
   async getProjectActions(req: Request, res: Response): Promise<Response> {
     try {
-      const id = req.params.id as string; // Convertir explícitamente
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
+      const id = req.params.id as string;
       const userId = req.user.id;
 
       // Verificar que el proyecto pertenece al usuario

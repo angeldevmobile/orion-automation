@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './CodeBlack';
+import { DiagramBlock } from './DiagramBlock';
 import { cn } from '@/lib/utils';
 import type { Components } from 'react-markdown';
 
@@ -10,6 +11,9 @@ interface MarkdownMessageProps {
 }
 
 export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
+  // Lenguajes que se renderizan como diagrama
+  const diagramLanguages = ['mermaid', 'd2', 'isoflow'];
+
   const components: Components = {
     // Bloques de código
     code({ className, children, ...props }) {
@@ -17,6 +21,11 @@ export function MarkdownMessage({ content, className }: MarkdownMessageProps) {
       const language = match ? match[1] : '';
       const value = String(children).replace(/\n$/, '');
       const isInline = !className;
+
+      // Renderizar diagramas con componente especial
+      if (!isInline && diagramLanguages.includes(language)) {
+        return <DiagramBlock language={language as 'mermaid' | 'd2' | 'isoflow'} value={value} />;
+      }
 
       return !isInline ? (
         <CodeBlock language={language} value={value} />

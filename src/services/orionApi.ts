@@ -612,3 +612,100 @@ export async function resetPassword(
   });
   return res.json();
 }
+
+/**
+ * Genera diagramas de arquitectura (Mermaid, D2, Isométrico)
+ */
+export async function generateDiagrams(
+  projectId: string,
+  token: string,
+  type: 'architecture' | 'sequence' | 'er' | 'isometric' = 'architecture'
+): Promise<ApiResponse> {
+  try {
+    const response = await fetch(getApiUrl(API_CONFIG.endpoints.generateDiagrams(projectId)), {
+      method: 'POST',
+      headers: getAuthHeaders(token),
+      body: JSON.stringify({ type }),
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: 'Error generando diagramas' };
+  }
+}
+
+/**
+ * Obtiene los diagramas generados de un proyecto
+ */
+export async function getProjectDiagrams(
+  projectId: string,
+  token: string
+): Promise<ApiResponse> {
+  try {
+    const response = await fetch(getApiUrl(API_CONFIG.endpoints.projectDiagrams(projectId)), {
+      headers: getAuthHeaders(token),
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, error: 'Error obteniendo diagramas' };
+  }
+}
+
+/**
+ * Obtiene imagen PNG de diagrama Mermaid o D2
+ */
+export async function getDiagramImage(
+  projectId: string,
+  token: string,
+  format: 'mermaid' | 'd2'
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      getApiUrl(API_CONFIG.endpoints.diagramImage(projectId, format)),
+      { headers: getAuthHeadersForUpload(token) }
+    );
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Obtiene imagen PNG de diagrama isométrico
+ */
+export async function getIsometricDiagramImage(
+  projectId: string,
+  token: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      getApiUrl(API_CONFIG.endpoints.isometricImage(projectId)),
+      { headers: getAuthHeadersForUpload(token) }
+    );
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Obtiene HTML interactivo del diagrama isométrico
+ */
+export async function getIsometricDiagramHTML(
+  projectId: string,
+  token: string
+): Promise<string | null> {
+  try {
+    const response = await fetch(
+      getApiUrl(API_CONFIG.endpoints.isometricHTML(projectId)),
+      { headers: getAuthHeadersForUpload(token) }
+    );
+    if (!response.ok) return null;
+    return await response.text();
+  } catch {
+    return null;
+  }
+}

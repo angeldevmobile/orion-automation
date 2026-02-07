@@ -4,6 +4,8 @@ import cors from 'cors';
 import routes from './routes/indexRoutes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
+import projectRoutes from './routes/projectRoutes.js';
+import diagramRoutes from './routes/diagramRoutes.js';
 
 dotenv.config();
 
@@ -41,6 +43,8 @@ app.use((req, res, next) => {
 
 // API routes
 app.use('/api', routes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/diagrams', diagramRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

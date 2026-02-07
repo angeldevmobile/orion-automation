@@ -4,6 +4,46 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
+// ═══════════════════════════════════════════════════════
+// Tipos del modelo Isoflow
+// ═══════════════════════════════════════════════════════
+export interface IsoflowNodeDef {
+  id: string;
+  type: string;
+  label: string;
+  description?: string;
+  position: { x: number; y: number };
+  icon?: string;
+  group?: string;
+  style?: { color?: string; opacity?: number };
+}
+
+export interface IsoflowEdgeDef {
+  from: string;
+  to: string;
+  label?: string;
+  style?: { color?: string; strokeDash?: string; animated?: boolean };
+}
+
+export interface IsoflowGroupDef {
+  id: string;
+  label: string;
+  style?: { color?: string; opacity?: number };
+}
+
+export interface IsoflowModel {
+  name: string;
+  description?: string;
+  nodes: IsoflowNodeDef[];
+  edges: IsoflowEdgeDef[];
+  groups?: IsoflowGroupDef[];
+  metadata?: {
+    generatedAt: string;
+    projectType: string;
+    version: string;
+  };
+}
+
 export class DiagramService {
   /**
    * Genera un diagrama de arquitectura C4 con Mermaid
@@ -128,176 +168,6 @@ Genera un diagrama D2 de nivel empresarial con:
 4. **Conexiones con estilos** personalizados (stroke-dash, stroke-width)
 5. **Dirección horizontal** (direction: right)
 
-Ejemplo de estructura D2 profesional:
-
-\`\`\`d2
-direction: right
-
-# ${projectName} - System Architecture
-
-external: External Access {
-  style.fill: "#e3f2fd"
-  style.stroke: "#1976d2"
-  style.stroke-width: 3
-  
-  user: End Users {
-    shape: person
-    style.fill: "#1976d2"
-    style.font-color: "#fff"
-  }
-  
-  mobile: Mobile App {
-    shape: rectangle
-    style.fill: "#42a5f5"
-    style.stroke: "#1976d2"
-  }
-}
-
-gateway: API Gateway {
-  style.fill: "#fff3e0"
-  style.stroke: "#f57c00"
-  style.stroke-width: 3
-  
-  firewall: Security Firewall {
-    shape: diamond
-    style.fill: "#ff6f00"
-    style.stroke: "#e65100"
-  }
-  
-  loadbalancer: Load Balancer {
-    shape: hexagon
-    style.fill: "#ffa726"
-    style.stroke: "#f57c00"
-  }
-  
-  api: REST API Gateway {
-    shape: rectangle
-    style.fill: "#ffb74d"
-    style.stroke: "#f57c00"
-  }
-}
-
-backend: Backend Services {
-  style.fill: "#f3e5f5"
-  style.stroke: "#7b1fa2"
-  style.stroke-width: 3
-  
-  auth: Authentication Service {
-    shape: rectangle
-    style.fill: "#ba68c8"
-    style.stroke: "#7b1fa2"
-  }
-  
-  business: Business Logic Layer {
-    shape: rectangle
-    style.fill: "#ce93d8"
-    style.stroke: "#8e24aa"
-  }
-  
-  microservices: Microservices {
-    style.fill: "#e1bee7"
-    style.stroke: "#9c27b0"
-    
-    users: User Service {
-      shape: rectangle
-    }
-    
-    products: Product Catalog {
-      shape: rectangle
-    }
-    
-    orders: Order Management {
-      shape: rectangle
-    }
-  }
-}
-
-messaging: Message Queue {
-  style.fill: "#fff9c4"
-  style.stroke: "#f9a825"
-  style.stroke-width: 3
-  
-  redis: Redis Cache {
-    shape: cylinder
-    style.fill: "#fdd835"
-    style.stroke: "#f57f17"
-  }
-  
-  rabbitmq: RabbitMQ {
-    shape: queue
-    style.fill: "#ffee58"
-    style.stroke: "#f9a825"
-  }
-}
-
-data: Data Layer {
-  style.fill: "#e8f5e9"
-  style.stroke: "#388e3c"
-  style.stroke-width: 3
-  
-  postgres: PostgreSQL Database {
-    shape: cylinder
-    style.fill: "#66bb6a"
-    style.stroke: "#2e7d32"
-  }
-  
-  storage: Cloud File Storage {
-    shape: cloud
-    style.fill: "#81c784"
-    style.stroke: "#388e3c"
-  }
-}
-
-# Connections with styles
-user -> firewall: HTTPS Request {
-  style.stroke: "#1976d2"
-  style.stroke-width: 2
-}
-
-mobile -> firewall: API Call {
-  style.stroke: "#42a5f5"
-  style.stroke-width: 2
-}
-
-firewall -> loadbalancer: Validated Traffic
-loadbalancer -> api: Distribute Load
-
-api -> auth: Validate Token {
-  style.stroke: "#7b1fa2"
-  style.stroke-width: 2
-  style.stroke-dash: 3
-}
-
-api -> business: Process Request {
-  style.stroke: "#8e24aa"
-  style.stroke-width: 2
-}
-
-business -> microservices.users: User Operations
-business -> microservices.products: Product Queries
-business -> microservices.orders: Order Processing
-
-microservices.users -> postgres: CRUD Operations {
-  style.stroke: "#388e3c"
-  style.stroke-width: 2
-}
-
-microservices.products -> postgres: Read Data
-microservices.orders -> postgres: Transactional Writes
-
-business -> redis: Cache Layer {
-  style.stroke: "#f9a825"
-  style.stroke-dash: 5
-}
-
-business -> rabbitmq: Async Events {
-  style.stroke: "#f57c00"
-  style.stroke-dash: 3
-}
-
-rabbitmq -> storage: Store Files
-\`\`\`
-
 **IMPORTANTE:** 
 - Responde SOLO con el código D2 entre \`\`\`d2 y \`\`\`
 - Analiza los archivos y usa componentes REALES del proyecto
@@ -340,36 +210,6 @@ Incluye:
 - Manejo de errores con notas
 - Respuestas exitosas y de error
 
-Formato:
-\`\`\`mermaid
-sequenceDiagram
-    actor User as 👤 Usuario
-    participant FE as 💻 Frontend
-    participant API as 🚪 API Gateway
-    participant Auth as 🔐 Auth Service
-    participant DB as 🗄️ Database
-    
-    User->>FE: Click "Login"
-    FE->>API: POST /auth/login
-    Note over FE,API: {email, password}
-    
-    API->>Auth: Validate credentials
-    Auth->>DB: SELECT * FROM users WHERE email=?
-    
-    alt User found
-        DB-->>Auth: User data
-        Auth->>Auth: Verify password
-        Auth-->>API: JWT token
-        API-->>FE: {token, user}
-        FE-->>User: Redirect to dashboard
-    else User not found
-        DB-->>Auth: NULL
-        Auth-->>API: 401 Unauthorized
-        API-->>FE: {error: "Invalid credentials"}
-        FE-->>User: Show error message
-    end
-\`\`\`
-
 Responde SOLO con el código Mermaid.`;
 
     const response = await anthropic.messages.create({
@@ -408,26 +248,6 @@ Incluye:
 - Claves primarias (PK) y foráneas (FK)
 - Índices únicos (UK)
 
-Formato:
-\`\`\`mermaid
-erDiagram
-    USER ||--o{ PROJECT : "creates"
-    USER {
-        string id PK
-        string email UK
-        string password
-        datetime created_at
-    }
-    PROJECT ||--o{ ANALYSIS : "has"
-    PROJECT {
-        string id PK
-        string user_id FK
-        string name
-        string type
-        int file_count
-    }
-\`\`\`
-
 Responde SOLO con el código Mermaid.`;
 
     const response = await anthropic.messages.create({
@@ -449,30 +269,212 @@ Responde SOLO con el código Mermaid.`;
     return this.extractMermaidCode(content.text);
   }
 
-  /**
-   * Extrae el código Mermaid de la respuesta de Claude
-   */
-  private extractMermaidCode(text: string): string {
-    const mermaidMatch = text.match(/```mermaid\n([\s\S]*?)```/);
+  // ═══════════════════════════════════════════════════════
+  // 🏗️ ISOFLOW — IA genera modelo isométrico
+  // ═══════════════════════════════════════════════════════
 
-    if (mermaidMatch && mermaidMatch[1]) {
-      return mermaidMatch[1].trim();
+  /**
+   * Genera modelo JSON Isoflow para diagramas isométricos.
+   * La IA analiza el proyecto y emite el JSON que Isoflow renderiza.
+   */
+  async generateIsoflowModel(
+    projectName: string,
+    projectType: string,
+    filesContent: Record<string, string>
+  ): Promise<IsoflowModel> {
+    const prompt = `Analiza este proyecto y genera un modelo JSON para un diagrama isométrico de arquitectura usando Isoflow.
+
+**PROYECTO:** ${projectName}
+**TIPO:** ${projectType}
+**ARCHIVOS CLAVE:**
+${Object.entries(filesContent)
+        .slice(0, 10)
+        .map(([name, content]) => `### ${name}\n${content.slice(0, 800)}`)
+        .join('\n\n')}
+
+Genera un JSON con esta estructura EXACTA. Analiza los archivos REALES y usa componentes que existan en el proyecto:
+
+\`\`\`json
+{
+  "name": "${projectName} Architecture",
+  "description": "Isometric architecture diagram generated by AI",
+  "groups": [
+    { "id": "external", "label": "External Layer", "style": { "color": "#e3f2fd", "opacity": 0.3 } },
+    { "id": "frontend", "label": "Frontend", "style": { "color": "#e8eaf6", "opacity": 0.3 } },
+    { "id": "backend", "label": "Backend Services", "style": { "color": "#f3e5f5", "opacity": 0.3 } },
+    { "id": "data", "label": "Data Layer", "style": { "color": "#e8f5e9", "opacity": 0.3 } },
+    { "id": "infra", "label": "Infrastructure", "style": { "color": "#fff3e0", "opacity": 0.3 } }
+  ],
+  "nodes": [
+    {
+      "id": "users",
+      "type": "person",
+      "label": "End Users",
+      "description": "Web and mobile clients",
+      "group": "external",
+      "icon": "person",
+      "position": { "x": 0, "y": 0 },
+      "style": { "color": "#1976d2" }
+    },
+    {
+      "id": "api_gateway",
+      "type": "server",
+      "label": "API Gateway",
+      "description": "Express.js REST API",
+      "group": "backend",
+      "icon": "server",
+      "position": { "x": 2, "y": 0 },
+      "style": { "color": "#7b1fa2" }
+    },
+    {
+      "id": "database",
+      "type": "database",
+      "label": "PostgreSQL",
+      "description": "Primary relational database",
+      "group": "data",
+      "icon": "database",
+      "position": { "x": 4, "y": 0 },
+      "style": { "color": "#388e3c" }
+    }
+  ],
+  "edges": [
+    {
+      "from": "users",
+      "to": "api_gateway",
+      "label": "HTTPS Requests",
+      "style": { "color": "#1976d2", "animated": true }
+    },
+    {
+      "from": "api_gateway",
+      "to": "database",
+      "label": "SQL Queries",
+      "style": { "color": "#388e3c" }
+    }
+  ]
+}
+\`\`\`
+
+**REGLAS:**
+1. Responde SOLO con JSON válido entre \`\`\`json y \`\`\`
+2. Detecta: APIs, DBs, colas, auth, cache, servicios externos
+3. type puede ser: person, browser, server, database, cloud, queue, container, lambda, cdn, loadbalancer, firewall, storage, microservice
+4. icon puede ser: person, browser, server, database, lock, cache, cloud, queue, lambda, cdn, loadbalancer, firewall, storage, microservice
+5. Posiciones en grid (x,y) incrementando de izquierda a derecha por capas
+6. Mínimo 4 nodos, máximo 12 nodos
+7. Cada edge tiene label descriptivo
+8. Usa nombres y tecnologías REALES detectadas en los archivos`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 5000,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    if (!response.content || response.content.length === 0) {
+      throw new Error('No se recibió respuesta de la IA para Isoflow');
     }
 
-    return text.trim();
+    const content = response.content[0];
+    if (!content || content.type !== 'text') {
+      throw new Error('La respuesta de la IA no contiene texto válido');
+    }
+
+    const jsonStr = this.extractJsonCode(content.text);
+    const model: IsoflowModel = JSON.parse(jsonStr);
+
+    model.metadata = {
+      generatedAt: new Date().toISOString(),
+      projectType,
+      version: '1.0.0',
+    };
+
+    return model;
   }
 
   /**
-   * Extrae el código D2 de la respuesta de Claude
+   * Genera modelo Isoflow desde especificación OpenAPI
    */
+  async generateIsoflowFromOpenAPI(
+    openApiSpec: string,
+    projectName: string
+  ): Promise<IsoflowModel> {
+    const prompt = `Analiza esta especificación OpenAPI y genera un modelo JSON Isoflow para diagrama isométrico.
+
+**PROYECTO:** ${projectName}
+**OPENAPI SPEC:**
+\`\`\`yaml
+${openApiSpec.slice(0, 4000)}
+\`\`\`
+
+Detecta todos los endpoints, agrúpalos por recurso/tag, identifica servicios, DBs, auth.
+Genera JSON con la misma estructura: { name, description, groups, nodes, edges }
+
+- Cada recurso/tag = 1 nodo tipo "microservice" o "server"
+- API Gateway como nodo central
+- Auth si hay securitySchemes
+- Database inferida de las operaciones CRUD
+
+Responde SOLO con JSON válido entre \`\`\`json y \`\`\``;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 5000,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    if (!response.content || response.content.length === 0) {
+      throw new Error('No se recibió respuesta para OpenAPI → Isoflow');
+    }
+
+    const content = response.content[0];
+    if (!content || content.type !== 'text') {
+      throw new Error('Respuesta inválida');
+    }
+
+    const jsonStr = this.extractJsonCode(content.text);
+    const model: IsoflowModel = JSON.parse(jsonStr);
+
+    model.metadata = {
+      generatedAt: new Date().toISOString(),
+      projectType: 'openapi',
+      version: '1.0.0',
+    };
+
+    return model;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // Extractores
+  // ═══════════════════════════════════════════════════════
+
+  private extractMermaidCode(text: string): string {
+    const mermaidMatch = text.match(/```mermaid\n([\s\S]*?)```/);
+    if (mermaidMatch && mermaidMatch[1]) {
+      return mermaidMatch[1].trim();
+    }
+    return text.trim();
+  }
+
   private extractD2Code(text: string): string {
     const d2Match = text.match(/```d2\n([\s\S]*?)```/);
-
     if (d2Match && d2Match[1]) {
       return d2Match[1].trim();
     }
-
-    // Si no está en bloques de código, intentar devolver todo
     return text.trim();
+  }
+
+  private extractJsonCode(text: string): string {
+    const jsonMatch = text.match(/```json\n([\s\S]*?)```/);
+    if (jsonMatch && jsonMatch[1]) {
+      return jsonMatch[1].trim();
+    }
+    const startIdx = text.indexOf('{');
+    const endIdx = text.lastIndexOf('}');
+    if (startIdx !== -1 && endIdx !== -1) {
+      return text.slice(startIdx, endIdx + 1);
+    }
+    throw new Error('No se encontró JSON válido en la respuesta');
   }
 }

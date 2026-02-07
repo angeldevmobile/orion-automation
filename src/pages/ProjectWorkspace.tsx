@@ -5,6 +5,7 @@ import { AIResponsePanel } from "@/components/workspace/AIResponsePanel";
 import { DocumentationPanel } from "@/components/workspace/DocumentationPanel";
 import { ImprovementsPanel } from "@/components/workspace/ImprovementsPanel";
 import { IssuesPanel } from "@/components/workspace/IssuesPanel";
+import { DiagramsPanel } from "@/components/workspace/DiagramPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,6 +33,7 @@ import {
   Eye,
   Copy,
   Check,
+  Box,
 } from "lucide-react";
 import { mockActionHistory } from "@/lib/mock-data";
 import {
@@ -247,6 +249,14 @@ export default function ProjectWorkspace() {
           <ScrollArea className="h-full">
             <div className="p-6">
               <DocumentationPanel projectId={id} />
+            </div>
+          </ScrollArea>
+        );
+      case "diagrams":
+        return (
+          <ScrollArea className="h-full">
+            <div className="p-6">
+              <DiagramsPanel projectId={id} />
             </div>
           </ScrollArea>
         );
@@ -804,95 +814,57 @@ export default function ProjectWorkspace() {
             </ScrollArea>
           </Tabs>
         );
-      }
-    };
-
-    // Loading state
-    if (isLoading) {
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Cargando proyecto...</p>
-          </div>
-        </div>
-      );
     }
+  };
 
-    // Project not found
-    if (!project) {
-      return (
-        <div className="min-h-screen bg-background flex flex-col">
-          <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/dashboard">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Proyectos
-              </Link>
-            </Button>
-          </header>
-          <div className="flex-1 flex items-center justify-center">
-            <Card className="w-96">
-              <CardContent className="p-6 text-center">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  Proyecto no encontrado
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  El proyecto que buscas no existe o no tienes acceso
-                </p>
-                <Button asChild>
-                  <Link to="/dashboard">Volver al dashboard</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando proyecto...</p>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    // No analysis state
-    if (!analysisData) {
-      return (
-        <div className="min-h-screen bg-background flex flex-col">
-          <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/dashboard">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Proyectos
-              </Link>
-            </Button>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">{project.name}</span>
-              <Badge variant="outline" className="text-xs">
-                Sin análisis
-              </Badge>
-            </div>
-          </header>
-          <div className="flex-1 flex items-center justify-center">
-            <Card className="w-96">
-              <CardContent className="p-6 text-center">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
-                  Sin análisis disponible
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Este proyecto aún no ha sido analizado con IA
-                </p>
-                <Button asChild>
-                  <Link to="/dashboard">Volver al dashboard</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
-    }
-
+  // Project not found
+  if (!project) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        {/* Header */}
+        <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/dashboard">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Proyectos
+            </Link>
+          </Button>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="w-96">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                Proyecto no encontrado
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                El proyecto que buscas no existe o no tienes acceso
+              </p>
+              <Button asChild>
+                <Link to="/dashboard">Volver al dashboard</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // No analysis state
+  if (!analysisData) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
         <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/dashboard">
@@ -903,127 +875,165 @@ export default function ProjectWorkspace() {
           <div className="h-6 w-px bg-border" />
           <div className="flex items-center gap-2">
             <span className="font-semibold">{project.name}</span>
-            <Badge
-              variant="outline"
-              className="text-xs bg-primary/10 text-primary border-primary/20">
-              Analizado
+            <Badge variant="outline" className="text-xs">
+              Sin análisis
             </Badge>
           </div>
-          <div className="flex-1" />
-          <Button variant="ghost" size="icon" asChild>
-            <Link to={`/project/${id}/settings`}>
-              <Settings className="h-4 w-4" />
-            </Link>
-          </Button>
         </header>
-
-        <div className="flex flex-1 overflow-hidden">
-          <WorkspaceSidebar
-            project={{
-              id: project.id,
-              name: project.name,
-              type: project.type as "code" | "documents" | "data",
-              status: "ready",
-              lastAnalysis: project.updatedAt,
-              description: project.description || "",
-              filesCount: 0,
-              issuesFound: analysisData?.issues.length || 0,
-            }}
-            actionHistory={mockActionHistory}
-            onActionClick={handleActionClick}
-            activeAction={activeAction}
-            analysisData={analysisData}
-          />
-
-          <main className="flex-1 overflow-hidden">{renderActionContent()}</main>
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="w-96">
+            <CardContent className="p-6 text-center">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                Sin análisis disponible
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Este proyecto aún no ha sido analizado con IA
+              </p>
+              <Button asChild>
+                <Link to="/dashboard">Volver al dashboard</Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-
-        <Dialog
-          open={isArtifactDialogOpen}
-          onOpenChange={setIsArtifactDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                {selectedArtifact?.name}
-              </DialogTitle>
-            </DialogHeader>
-
-            {selectedArtifact && (
-              <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Metadata */}
-                <div className="flex items-center gap-2 mb-4 pb-4 border-b">
-                  <Badge variant="outline">{selectedArtifact.type}</Badge>
-                  <Badge variant="outline">{selectedArtifact.status}</Badge>
-                  <div className="flex-1" />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleCopyContent(
-                        selectedArtifact.id,
-                        selectedArtifact.content,
-                      )
-                    }>
-                    {copiedArtifactId === selectedArtifact.id ? (
-                      <>
-                        <Check className="h-4 w-4 mr-2" />
-                        Copiado
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copiar
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownloadArtifact(selectedArtifact)}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Descargar
-                  </Button>
-                </div>
-
-                {/* Contenido */}
-                <ScrollArea className="flex-1 border rounded-lg">
-                  <div className="p-4">
-                    {selectedArtifact.type === "diagram" ? (
-                      // Renderizar diagrama Mermaid
-                      <div className="bg-muted/30 p-6 rounded-lg">
-                        <pre className="text-sm font-mono whitespace-pre-wrap">
-                          {selectedArtifact.content}
-                        </pre>
-                        <div className="mt-4 p-3 bg-accent/50 rounded border border-border">
-                          <p className="text-xs text-muted-foreground">
-                            💡 Este diagrama usa sintaxis Mermaid. Copia el
-                            contenido y pégalo en
-                            <a
-                              href="https://mermaid.live"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline">
-                              mermaid.live
-                            </a>
-                            para visualizarlo.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      // Renderizar markdown/texto
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <pre className="whitespace-pre-wrap text-sm leading-relaxed">
-                          {selectedArtifact.content}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/dashboard">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Proyectos
+          </Link>
+        </Button>
+        <div className="h-6 w-px bg-border" />
+        <div className="flex items-center gap-2">
+          <span className="font-semibold">{project.name}</span>
+          <Badge
+            variant="outline"
+            className="text-xs bg-primary/10 text-primary border-primary/20">
+            Analizado
+          </Badge>
+        </div>
+        <div className="flex-1" />
+        <Button variant="ghost" size="icon" asChild>
+          <Link to={`/project/${id}/settings`}>
+            <Settings className="h-4 w-4" />
+          </Link>
+        </Button>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <WorkspaceSidebar
+          project={{
+            id: project.id,
+            name: project.name,
+            type: project.type as "code" | "documents" | "data",
+            status: "ready",
+            lastAnalysis: project.updatedAt,
+            description: project.description || "",
+            filesCount: 0,
+            issuesFound: analysisData?.issues.length || 0,
+          }}
+          actionHistory={mockActionHistory}
+          onActionClick={handleActionClick}
+          activeAction={activeAction}
+          analysisData={analysisData}
+        />
+
+        <main className="flex-1 overflow-hidden">{renderActionContent()}</main>
+      </div>
+
+      <Dialog
+        open={isArtifactDialogOpen}
+        onOpenChange={setIsArtifactDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              {selectedArtifact?.name}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedArtifact && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Metadata */}
+              <div className="flex items-center gap-2 mb-4 pb-4 border-b">
+                <Badge variant="outline">{selectedArtifact.type}</Badge>
+                <Badge variant="outline">{selectedArtifact.status}</Badge>
+                <div className="flex-1" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleCopyContent(
+                      selectedArtifact.id,
+                      selectedArtifact.content,
+                    )
+                  }>
+                  {copiedArtifactId === selectedArtifact.id ? (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
+                      Copiado
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copiar
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownloadArtifact(selectedArtifact)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Descargar
+                </Button>
+              </div>
+
+              {/* Contenido */}
+              <ScrollArea className="flex-1 border rounded-lg">
+                <div className="p-4">
+                  {selectedArtifact.type === "diagram" ? (
+                    // Renderizar diagrama Mermaid
+                    <div className="bg-muted/30 p-6 rounded-lg">
+                      <pre className="text-sm font-mono whitespace-pre-wrap">
+                        {selectedArtifact.content}
+                      </pre>
+                      <div className="mt-4 p-3 bg-accent/50 rounded border border-border">
+                        <p className="text-xs text-muted-foreground">
+                          💡 Este diagrama usa sintaxis Mermaid. Copia el
+                          contenido y pégalo en
+                          <a
+                            href="https://mermaid.live"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline">
+                            mermaid.live
+                          </a>
+                          para visualizarlo.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    // Renderizar markdown/texto
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <pre className="whitespace-pre-wrap text-sm leading-relaxed">
+                        {selectedArtifact.content}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

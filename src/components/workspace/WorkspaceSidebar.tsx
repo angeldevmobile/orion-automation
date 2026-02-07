@@ -14,6 +14,7 @@ import {
   Loader2,
   XCircle,
   GitBranch,
+  Box,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Project, ActionHistoryItem } from '@/lib/mock-data';
@@ -21,6 +22,7 @@ import type { AnalysisResult } from '@/services/orionApi';
 
 const actions = [
   { id: 'analyze', label: 'Analizar proyecto', icon: Search, description: 'Análisis completo de estructura y código' },
+  { id: 'diagrams', label: 'Diagramas de arquitectura', icon: Box, description: 'Diagramas isométricos 3D, Mermaid y D2' },
   { id: 'docs', label: 'Generar documentación', icon: FileText, description: 'Crear docs técnicos automáticamente' },
   { id: 'issues', label: 'Detectar problemas', icon: AlertTriangle, description: 'Vulnerabilidades y deuda técnica' },
   { id: 'improve', label: 'Proponer mejoras', icon: Lightbulb, description: 'Sugerencias de optimización' },

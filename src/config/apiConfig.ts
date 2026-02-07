@@ -41,6 +41,13 @@ export const API_CONFIG = {
     conversationById: (id: string) => `/api/conversations/${id}`,
     sendMessage: '/api/conversations/send',
     conversationSendMessage: (id: string) => `/api/conversations/${id}/send`,
+    
+    // Diagrams
+    generateDiagrams: (id: string) => `/api/diagrams/project/${id}/generate`,
+    projectDiagrams: (id: string) => `/api/diagrams/project/${id}`,
+    diagramImage: (id: string, format: 'mermaid' | 'd2') => `/api/diagrams/project/${id}/image/${format}`,
+    isometricImage: (id: string) => `/api/diagrams/project/${id}/isometric/image`,
+    isometricHTML: (id: string) => `/api/diagrams/project/${id}/isometric/html`,
   },
 } as const;
 

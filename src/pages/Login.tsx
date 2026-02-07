@@ -128,7 +128,7 @@ export default function Login() {
               </div>
               <div>
                 <div className="font-semibold text-lg">Gabriel Zapata</div>
-                <div className="text-sm text-primary-foreground/70">CEO, Orion AI</div>
+                <div className="text-sm text-primary-foreground/70">Founder & Lead Developer, Orion AI</div>
               </div>
             </div>
           </div>

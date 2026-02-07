@@ -10,7 +10,6 @@ export class EmailService {
   private transporter;
 
   constructor() {
-    // Cambiar createTransporter por createTransport
     this.transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -32,6 +31,12 @@ export class EmailService {
         to: options.to,
         subject: options.subject,
         html: options.html,
+        // Agregar logo como attachment inline
+        attachments: [{
+          filename: 'orion-logo.png',
+          path: 'https://i.imgur.com/kWMCysB.png', 
+          cid: 'orion-logo'
+        }]
       });
       
       console.log('Correo enviado exitosamente a:', options.to);

@@ -29,9 +29,9 @@ export class AdvancedDiagramService {
       });
 
       await fs.writeFile(outputPath, response.data);
-      console.log(`✅ Diagrama Mermaid generado: ${outputPath}`);
+      console.log(`Diagrama Mermaid generado: ${outputPath}`);
     } catch (error) {
-      console.error('❌ Error generando diagrama Mermaid con Kroki:', error);
+      console.error('Error generando diagrama Mermaid con Kroki:', error);
       await this.generateMermaidInk(mermaidCode, outputPath);
     }
   }
@@ -53,9 +53,9 @@ export class AdvancedDiagramService {
       });
 
       await fs.writeFile(outputPath, response.data);
-      console.log(`✅ Diagrama Mermaid.ink generado: ${outputPath}`);
+      console.log(`Diagrama Mermaid.ink generado: ${outputPath}`);
     } catch (error) {
-      console.error('❌ Error generando diagrama Mermaid.ink:', error);
+      console.error('Error generando diagrama Mermaid.ink:', error);
       throw new Error('No se pudo generar el diagrama Mermaid');
     }
   }
@@ -83,9 +83,9 @@ export class AdvancedDiagramService {
       });
 
       await fs.writeFile(outputPath, response.data);
-      console.log(`✅ Diagrama D2 generado: ${outputPath}`);
+      console.log(`Diagrama D2 generado: ${outputPath}`);
     } catch (error) {
-      console.error('❌ Error generando diagrama D2:', error);
+      console.error('Error generando diagrama D2:', error);
       throw new Error('No se pudo generar el diagrama D2');
     }
   }
@@ -113,15 +113,15 @@ export class AdvancedDiagramService {
       });
 
       await fs.writeFile(outputPath, response.data);
-      console.log(`✅ Diagrama PlantUML generado: ${outputPath}`);
+      console.log(`Diagrama PlantUML generado: ${outputPath}`);
     } catch (error) {
-      console.error('❌ Error generando diagrama PlantUML:', error);
+      console.error('Error generando diagrama PlantUML:', error);
       throw error;
     }
   }
 
   // ═══════════════════════════════════════════════════════
-  // 🏗️ ISOFLOW — Renderizado isométrico real + PNG
+  // ISOFLOW — Renderizado isométrico real + PNG
   // ═══════════════════════════════════════════════════════
 
   /**
@@ -132,7 +132,7 @@ export class AdvancedDiagramService {
     outputPath: string
   ): Promise<void> {
     await fs.writeFile(outputPath, JSON.stringify(model, null, 2), 'utf-8');
-    console.log(`✅ Modelo Isoflow JSON guardado: ${outputPath}`);
+    console.log(`Modelo Isoflow JSON guardado: ${outputPath}`);
   }
 
   /**
@@ -145,11 +145,11 @@ export class AdvancedDiagramService {
   ): Promise<void> {
     const html = this.buildIsoflowHTML(model);
     await fs.writeFile(outputPath, html, 'utf-8');
-    console.log(`✅ Isoflow HTML generado: ${outputPath}`);
+    console.log(`Isoflow HTML generado: ${outputPath}`);
   }
 
   /**
-   * 🔥 Genera imagen PNG del diagrama isométrico
+   * Genera imagen PNG del diagrama isométrico
    * Usa Puppeteer para renderizar el HTML de Isoflow y capturar screenshot
    */
   async generateIsoflowImage(
@@ -173,7 +173,7 @@ export class AdvancedDiagramService {
 
     let browser;
     try {
-      console.log('🚀 Iniciando Puppeteer para renderizar Isoflow...');
+      console.log('Iniciando Puppeteer para renderizar Isoflow...');
 
       browser = await puppeteer.launch({
         headless: true,

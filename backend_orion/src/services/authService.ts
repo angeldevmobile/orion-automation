@@ -260,7 +260,7 @@ export class AuthService {
       console.log('Enviando email de recuperación a:', user.email);
       console.log('Nombre del usuario:', userName);
       
-      // ✅ Generar HTML directamente en el backend
+      // Generar HTML directamente en el backend
       const htmlContent = resetPasswordEmailTemplate(resetUrl, userName);
       
       // Enviar email

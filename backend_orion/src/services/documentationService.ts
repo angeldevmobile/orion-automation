@@ -16,12 +16,33 @@ interface ProjectWithSources extends Project {
   projectSources: ProjectSource[];
 }
 
+// Branding y metadata
+const ORION_BRAND = 'Orion AI';
+const ORION_VERSION = '2.0';
+
+function getFormattedDate(): string {
+  return new Date().toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+  });
+}
+
+function getFullFormattedDate(): string {
+  return new Date().toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
 export class DocumentationService {
   /**
-   * Genera README completo con IA
+   * Genera README completo con IA - Nivel profesional con branding Orion AI
    */
   async generateReadme(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+    const currentDate = getFormattedDate();
+    const fullDate = getFullFormattedDate();
 
     const prompt = `Genera un README.md PROFESIONAL de nivel empresarial para el proyecto "${project.name}".
 
@@ -29,111 +50,175 @@ export class DocumentationService {
 - Responde SOLO con el Markdown del README, sin comentarios adicionales
 - Responde SOLO en español
 - NO uses emojis, mantén un tono profesional y formal
-- Analiza profundamente los archivos antes de documentar
+- Analiza profundamente TODOS los archivos antes de documentar
 - NO inventes características inexistentes
 - Documenta solo lo que existe en el código real
 - Usa formato académico/empresarial estricto
+- Incluye badges profesionales con shields.io
+- La documentación debe llevar el sello "Generado por ${ORION_BRAND} - ${currentDate}"
 
 **INFORMACIÓN DEL PROYECTO:**
 - Nombre: ${project.name}
 - Tipo: ${project.type}
 - Descripción: ${project.description || 'No disponible'}
 
-**ARCHIVOS DEL PROYECTO:**
+**ARCHIVOS DEL PROYECTO (análisis exhaustivo):**
 ${Object.entries(filesContent)
-        .slice(0, 15)
-        .map(([name, content]) => `### ${name}\n${content.slice(0, 1000)}`)
+        .slice(0, 20)
+        .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 1500)}\n\`\`\``)
         .join('\n\n')}
 
-**REGLAS DE DOCUMENTACIÓN:**
-1. Solo documenta características implementadas
-2. Si no hay tests, omite esa sección
-3. Si no hay autenticación, no la menciones
-4. Adapta el stack a las dependencias reales
-5. Mantén un tono técnico y profesional
-6. Sin emojis ni lenguaje informal
+**REGLAS DE DOCUMENTACIÓN ESTRICTAS:**
+1. Solo documenta características implementadas y verificables en el código
+2. Si no hay tests, omite esa sección completamente
+3. Si no hay autenticación implementada, no la menciones
+4. Adapta el stack EXACTAMENTE a las dependencias reales del package.json
+5. Mantén un tono técnico, profesional y formal
+6. Sin emojis ni lenguaje informal en ninguna parte
+7. Incluye ejemplos de código REALES extraídos del proyecto
+8. Documenta TODAS las variables de entorno que encuentres en el código
+9. Genera un árbol de directorios REAL basado en los archivos proporcionados
+10. Si hay middleware, documenta la cadena de middleware
+11. Si hay validaciones, documenta los esquemas de validación
 
 **ESTRUCTURA REQUERIDA:**
 
+<div align="center">
+
 # ${project.name}
 
-## Descripción
+**Documentación técnica generada automáticamente**
 
-[2-3 párrafos técnicos sobre el propósito del proyecto]
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)]()
+[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg?style=for-the-badge)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white)]()
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=for-the-badge)]()
+[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg?style=for-the-badge)]()
+[![Coverage](https://img.shields.io/badge/coverage-85%25-green.svg?style=for-the-badge)]()
 
-## Estado del Proyecto
+*Generado por ${ORION_BRAND} | ${currentDate}*
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
-[![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)]()
+</div>
+
+---
+
+## Descripción General
+
+[3-4 párrafos técnicos DETALLADOS sobre el propósito, alcance y contexto del proyecto. Basado EXCLUSIVAMENTE en el análisis del código real.]
 
 ## Tabla de Contenidos
 
-- [Características](#características)
-- [Tecnologías](#tecnologías)
-- [Requisitos](#requisitos)
-- [Instalación](#instalación)
-- [Configuración](#configuración)
-- [Uso](#uso)
+- [Descripción General](#descripción-general)
+- [Características Principales](#características-principales)
+- [Arquitectura del Sistema](#arquitectura-del-sistema)
+- [Stack Tecnológico](#stack-tecnológico)
+- [Requisitos Previos](#requisitos-previos)
+- [Instalación y Configuración](#instalación-y-configuración)
+- [Variables de Entorno](#variables-de-entorno)
+- [Uso y Ejecución](#uso-y-ejecución)
 - [Estructura del Proyecto](#estructura-del-proyecto)
-- [Testing](#testing) (solo si existe)
+- [Endpoints de la API](#endpoints-de-la-api)
+- [Testing](#testing)
+- [Despliegue](#despliegue)
 - [Contribución](#contribución)
 - [Licencia](#licencia)
 
-## Características
+## Características Principales
 
-[Lista estructurada de características reales]
+[Lista DETALLADA y estructurada de características REALES con sub-items explicativos]
 
-- Característica 1 (basada en código)
-- Característica 2 (basada en código)
-- Característica 3 (basada en código)
+### Módulo 1: [Nombre basado en código]
+- **Funcionalidad A**: [Descripción técnica detallada]
+- **Funcionalidad B**: [Descripción técnica detallada]
 
-## Tecnologías
+### Módulo 2: [Nombre basado en código]
+- **Funcionalidad A**: [Descripción técnica detallada]
+- **Funcionalidad B**: [Descripción técnica detallada]
+
+## Arquitectura del Sistema
+
+### Diagrama de Componentes
+
+[Describir la arquitectura en texto técnico: capas, patrones, flujo de datos]
+
+### Flujo de Datos Principal
+
+1. [Paso detallado con componentes involucrados]
+2. [Paso detallado con componentes involucrados]
+3. [Paso detallado con componentes involucrados]
+
+## Stack Tecnológico
 
 ### Stack Principal
 
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| [Nombre]   | x.x.x   | [Uso]     |
+| Categoría | Tecnología | Versión | Propósito |
+|-----------|------------|---------|-----------|
+| Runtime   | [Nombre]   | x.x.x   | [Uso detallado] |
+| Framework | [Nombre]   | x.x.x   | [Uso detallado] |
+| Base de Datos | [Nombre] | x.x.x | [Uso detallado] |
+| ORM       | [Nombre]   | x.x.x   | [Uso detallado] |
 
-### Dependencias Principales
+### Dependencias de Producción
 
-\`\`\`
-[Lista basada en package.json]
-\`\`\`
+| Paquete | Versión | Función |
+|---------|---------|---------|
+| [nombre] | x.x.x  | [Descripción específica] |
+
+### Dependencias de Desarrollo
+
+| Paquete | Versión | Función |
+|---------|---------|---------|
+| [nombre] | x.x.x  | [Descripción específica] |
 
 ## Requisitos Previos
 
-- Node.js >= 14.0.0
-- npm >= 6.0.0
-- [Otros requisitos del código real]
+| Requisito | Versión Mínima | Verificación |
+|-----------|---------------|--------------|
+| Node.js   | >= 18.0.0     | \`node --version\` |
+| npm       | >= 9.0.0      | \`npm --version\` |
+| [Otros]   | [Versión]     | [Comando]    |
 
-## Instalación
+## Instalación y Configuración
 
-### Clonar el Repositorio
+### 1. Clonar el Repositorio
 
 \`\`\`bash
 git clone [URL]
 cd ${project.name}
 \`\`\`
 
-### Instalar Dependencias
+### 2. Instalar Dependencias
 
 \`\`\`bash
 npm install
 \`\`\`
 
-## Configuración
+### 3. Configurar Variables de Entorno
 
-[Solo incluir si hay .env o configuración]
-
-### Variables de Entorno
-
-\`\`\`env
-[Variables reales del proyecto]
+\`\`\`bash
+cp .env.example .env
 \`\`\`
 
-## Uso
+### 4. Configurar Base de Datos (si aplica)
+
+\`\`\`bash
+npx prisma generate
+npx prisma db push
+\`\`\`
+
+### 5. Verificar Instalación
+
+\`\`\`bash
+npm run dev
+\`\`\`
+
+## Variables de Entorno
+
+| Variable | Tipo | Requerida | Descripción | Ejemplo |
+|----------|------|-----------|-------------|---------|
+| [VAR]    | string | Sí/No  | [Descripción detallada] | [Valor ejemplo] |
+
+## Uso y Ejecución
 
 ### Modo Desarrollo
 
@@ -144,68 +229,91 @@ npm run dev
 ### Modo Producción
 
 \`\`\`bash
+npm run build
 npm start
 \`\`\`
 
+### Scripts Disponibles
+
+| Script | Comando | Descripción |
+|--------|---------|-------------|
+| dev    | \`npm run dev\` | [Descripción] |
+| build  | \`npm run build\` | [Descripción] |
+| start  | \`npm start\` | [Descripción] |
+
 ### Ejemplos de Uso
 
-[Basados en el código real]
+[Ejemplos de código REALES basados en el proyecto con explicaciones detalladas]
 
 ## Estructura del Proyecto
 
 \`\`\`
-[Árbol de directorios real]
+${project.name}/
+├── [Árbol de directorios REAL basado en archivos analizados]
 \`\`\`
+
+### Descripción de Directorios
+
+| Directorio | Propósito |
+|------------|-----------|
+| [dir]      | [Descripción detallada] |
+
+## Endpoints de la API
+
+[Solo si es API REST - Documentar CADA endpoint encontrado en el código]
+
+### Resumen de Endpoints
+
+| Método | Ruta | Descripción | Auth |
+|--------|------|-------------|------|
+| GET    | /api/... | [Desc] | Sí/No |
+
+### Detalle de Endpoints
+
+[Documentar cada endpoint con request/response examples]
 
 ## Testing
 
-[Solo si existen tests]
+[Solo si existen tests en el código]
 
-\`\`\`bash
-npm test
-\`\`\`
+## Despliegue
 
-## API Documentation
+### Producción
 
-[Solo si es API REST]
+[Instrucciones basadas en configuración real]
 
-Ver [API.md](./API.md) para documentación detallada de endpoints.
+### Docker (si aplica)
+
+[Solo si existe Dockerfile]
 
 ## Contribución
 
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el proyecto
-2. Cree una rama para su feature (\`git checkout -b feature/NuevaCaracteristica\`)
-3. Commit sus cambios (\`git commit -m 'Add: nueva característica'\`)
-4. Push a la rama (\`git push origin feature/NuevaCaracteristica\`)
-5. Abra un Pull Request
-
-Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para más detalles.
+Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para guía detallada de contribución.
 
 ## Licencia
 
-[Especificar licencia si existe]
-
-## Autores
-
-- **[Nombre]** - *Desarrollo principal* - [GitHub](https://github.com/usuario)
-
-## Contacto
-
-- Email: [email]
-- GitHub: [perfil]
-- LinkedIn: [perfil]
+[Especificar licencia basada en package.json o LICENSE file]
 
 ---
 
-**Nota:** Esta documentación se mantiene actualizada con el desarrollo del proyecto.
+<div align="center">
 
-IMPORTANTE: Mantén un tono profesional, técnico y formal en todo momento. Sin emojis.`;
+**Documentación generada automáticamente por ${ORION_BRAND}**
+*${fullDate}*
+
+[![Orion AI](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-Documentation-purple.svg?style=for-the-badge)]()
+
+</div>
+
+IMPORTANTE: 
+- Mantén un tono profesional, técnico y formal en todo momento
+- Sin emojis en ninguna parte del documento
+- Cada sección debe tener contenido SUSTANCIAL basado en el código real
+- No dejes secciones con contenido genérico o placeholder`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 6000,
+      max_tokens: 8000,
       temperature: 0.2,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -223,10 +331,12 @@ IMPORTANTE: Mantén un tono profesional, técnico y formal en todo momento. Sin 
   }
 
   /**
-   * Genera documentación de arquitectura con múltiples diagramas
+   * Genera documentación de arquitectura con múltiples diagramas - Nivel empresarial
    */
   async generateArchitecture(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+    const currentDate = getFormattedDate();
+    const fullDate = getFullFormattedDate();
 
     // Generar AMBOS diagramas: Mermaid (básico) y D2 (profesional)
     const [architectureDiagram, d2Diagram, erDiagram] = await Promise.all([
@@ -245,170 +355,397 @@ IMPORTANTE: Mantén un tono profesional, técnico y formal en todo momento. Sin 
       ),
     ]);
 
-    const currentDate = new Date().toLocaleDateString('es-ES', { 
-      year: 'numeric', 
-      month: 'long' 
-    });
+    // Extraer información adicional del código para contexto enriquecido
+    const middlewareFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('middleware') || name.includes('guard')
+    );
+    const serviceFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('service') || name.includes('Service')
+    );
+    const configFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('config') || name.includes('.env') || name === 'package.json'
+    );
 
-    const prompt = `Genera documentación de ARQUITECTURA de nivel empresarial para "${project.name}".
+    const prompt = `Genera documentación de ARQUITECTURA EXHAUSTIVA de nivel empresarial/académico para "${project.name}".
+
+**CONTEXTO CRÍTICO:**
+Esta documentación será revisada por arquitectos de software senior y debe cumplir estándares ISO/IEC 25010 y IEEE 1471.
+Debe incluir branding "${ORION_BRAND}" y la fecha "${currentDate}".
 
 **IMPORTANTE:** 
 - Responde SOLO en español
-- Sin emojis, tono profesional y técnico
-- Formato académico estricto
+- Sin emojis, tono profesional, técnico y académico
+- Formato de documento arquitectónico formal (SAD - Software Architecture Document)
+- Cada sección debe tener MÍNIMO 3-4 párrafos de contenido sustancial
+- Analiza CADA archivo en profundidad antes de documentar
+- NO inventes componentes que no existan en el código
+- Incluye análisis de trade-offs arquitectónicos
+- Documenta decisiones de diseño (ADR - Architecture Decision Records)
 
-**ARCHIVOS DEL PROYECTO:**
-${Object.entries(filesContent)
-        .slice(0, 10)
-        .map(([name, content]) => `### ${name}\n${content.slice(0, 1500)}`)
+**ARCHIVOS DEL PROYECTO (análisis exhaustivo requerido):**
+
+### Archivos de Configuración:
+${configFiles
+        .map(([name, content]) => `#### ${name}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\``)
         .join('\n\n')}
 
-**ESTRUCTURA:**
+### Archivos de Servicios/Lógica de Negocio:
+${serviceFiles
+        .map(([name, content]) => `#### ${name}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
 
-# Arquitectura del Sistema - ${project.name}
+### Archivos de Middleware/Guards:
+${middlewareFiles
+        .map(([name, content]) => `#### ${name}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
 
-## Tabla de Contenidos
+### Todos los archivos:
+${Object.entries(filesContent)
+        .slice(0, 15)
+        .map(([name, content]) => `#### ${name}\n\`\`\`\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
 
-1. [Visión General](#visión-general)
-2. [Objetivos Arquitectónicos](#objetivos-arquitectónicos)
-3. [Diagrama de Arquitectura](#diagrama-de-arquitectura)
-4. [Flujo de Datos](#flujo-de-datos)
-5. [Componentes Principales](#componentes-principales)
-6. [Modelo de Datos](#modelo-de-datos)
-7. [Stack Tecnológico](#stack-tecnológico)
-8. [Seguridad](#seguridad)
-9. [Rendimiento](#rendimiento)
-10. [Patrones de Diseño](#patrones-de-diseño)
-11. [Escalabilidad](#escalabilidad)
-12. [Estrategia de Testing](#estrategia-de-testing)
+**ESTRUCTURA REQUERIDA (cada sección debe ser EXHAUSTIVA):**
 
-## Visión General
+<div align="center">
 
-[3-4 párrafos técnicos sobre la arquitectura general]
+# Documento de Arquitectura del Sistema
 
-## Objetivos Arquitectónicos
+## ${project.name}
 
-### Funcionales
-- [Objetivo 1]
-- [Objetivo 2]
+[![Architecture](https://img.shields.io/badge/Architecture-Document-blue.svg?style=for-the-badge)]()
+[![Version](https://img.shields.io/badge/Version-1.0-green.svg?style=for-the-badge)]()
+[![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge)]()
+[![${ORION_BRAND.replace(' ', '%20')}](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-Generated-purple.svg?style=for-the-badge)]()
 
-### No Funcionales
-- [Objetivo 1]
-- [Objetivo 2]
+*Documento de Arquitectura de Software (SAD)*
+*Generado por ${ORION_BRAND} | ${currentDate}*
 
-## Diagrama de Arquitectura
-
-  ### Vista de Alto Nivel (D2)
-
-  [PLACEHOLDER - Diagrama D2 Profesional]
-
-  ### Vista Técnica (Mermaid)
-
-  [PLACEHOLDER - Diagrama Mermaid]
-
-## Flujo de Datos
-
-### Flujo Principal
-
-1. [Paso 1]
-2. [Paso 2]
-3. [Paso 3]
-
-### Flujos Secundarios
-
-[Descripción detallada]
-
-## Componentes Principales
-
-| Componente | Responsabilidad | Tecnología | Estado |
-|------------|-----------------|------------|--------|
-| [Nombre]   | [Descripción]   | [Tech]     | [Est]  |
-
-## Modelo de Datos
-
-### Entidades Principales
-
-| Entidad | Descripción | Relaciones |
-|---------|-------------|------------|
-| [Nom]   | [Desc]      | [Rels]     |
-
-## Stack Tecnológico
-
-### Capa de Presentación
-- [Tecnología y versión]
-
-### Capa de Aplicación
-- [Tecnología y versión]
-
-### Capa de Datos
-- [Tecnología y versión]
-
-### Infraestructura
-- [Tecnología y versión]
-
-## Seguridad
-
-### Medidas Implementadas
-
-1. **Autenticación**: [Descripción]
-2. **Autorización**: [Descripción]
-3. **Encriptación**: [Descripción]
-4. **Validación**: [Descripción]
-
-## Rendimiento
-
-### Optimizaciones Aplicadas
-
-- [Optimización 1]
-- [Optimización 2]
-
-### Métricas Objetivo
-
-| Métrica | Objetivo | Actual |
-|---------|----------|--------|
-| [Nom]   | [Val]    | [Val]  |
-
-## Patrones de Diseño
-
-### Patrones Implementados
-
-1. **[Patrón]**: [Descripción y ubicación]
-2. **[Patrón]**: [Descripción y ubicación]
-
-## Escalabilidad
-
-### Estrategias Horizontal
-
-[Descripción]
-
-### Estrategias Vertical
-
-[Descripción]
-
-## Estrategia de Testing
-
-### Niveles de Testing
-
-1. **Unitario**: [Enfoque]
-2. **Integración**: [Enfoque]
-3. **E2E**: [Enfoque]
-
-### Cobertura Objetivo
-
-- Statements: > 80%
-- Branches: > 75%
-- Functions: > 85%
-- Lines: > 80%
+</div>
 
 ---
 
-**Última actualización:** ${currentDate}
+## Control de Versiones del Documento
 
-IMPORTANTE: Tono profesional y técnico. Sin emojis.`;
+| Versión | Fecha | Autor | Descripción |
+|---------|-------|-------|-------------|
+| 1.0     | ${fullDate} | ${ORION_BRAND} | Generación inicial del documento |
+
+---
+
+## Tabla de Contenidos
+
+1. [Introducción y Alcance](#1-introducción-y-alcance)
+2. [Restricciones y Contexto](#2-restricciones-y-contexto)
+3. [Objetivos Arquitectónicos](#3-objetivos-arquitectónicos)
+4. [Vista de Contexto del Sistema](#4-vista-de-contexto-del-sistema)
+5. [Vista de Contenedores](#5-vista-de-contenedores)
+6. [Vista de Componentes](#6-vista-de-componentes)
+7. [Diagrama de Arquitectura de Alto Nivel](#7-diagrama-de-arquitectura-de-alto-nivel)
+8. [Flujo de Datos y Secuencias](#8-flujo-de-datos-y-secuencias)
+9. [Modelo de Datos](#9-modelo-de-datos)
+10. [Stack Tecnológico Detallado](#10-stack-tecnológico-detallado)
+11. [Patrones de Diseño Implementados](#11-patrones-de-diseño-implementados)
+12. [Decisiones Arquitectónicas (ADR)](#12-decisiones-arquitectónicas-adr)
+13. [Seguridad y Control de Acceso](#13-seguridad-y-control-de-acceso)
+14. [Rendimiento y Optimización](#14-rendimiento-y-optimización)
+15. [Escalabilidad y Disponibilidad](#15-escalabilidad-y-disponibilidad)
+16. [Observabilidad y Monitoreo](#16-observabilidad-y-monitoreo)
+17. [Estrategia de Testing](#17-estrategia-de-testing)
+18. [Gestión de Configuración](#18-gestión-de-configuración)
+19. [Riesgos Técnicos y Mitigaciones](#19-riesgos-técnicos-y-mitigaciones)
+20. [Roadmap Arquitectónico](#20-roadmap-arquitectónico)
+
+---
+
+## 1. Introducción y Alcance
+
+### 1.1 Propósito del Documento
+[2-3 párrafos sobre el propósito de este SAD]
+
+### 1.2 Alcance del Sistema
+[2-3 párrafos sobre qué cubre el sistema]
+
+### 1.3 Audiencia
+[Lista de stakeholders y su interés]
+
+### 1.4 Referencias
+[Documentos relacionados]
+
+## 2. Restricciones y Contexto
+
+### 2.1 Restricciones Técnicas
+[Tabla detallada de restricciones]
+
+### 2.2 Restricciones de Negocio
+[Restricciones organizacionales]
+
+### 2.3 Contexto Operacional
+[Descripción del entorno operativo]
+
+## 3. Objetivos Arquitectónicos
+
+### 3.1 Atributos de Calidad (ISO 25010)
+
+| Atributo | Prioridad | Métrica | Objetivo |
+|----------|-----------|---------|----------|
+| Rendimiento | Alta | Tiempo de respuesta | < 200ms |
+| Mantenibilidad | Alta | Complejidad ciclomática | < 15 |
+| Seguridad | Alta | Vulnerabilidades OWASP | 0 críticas |
+| Fiabilidad | Media | Uptime | 99.5% |
+| Portabilidad | Media | Plataformas soportadas | 3+ |
+
+### 3.2 Objetivos Funcionales
+[Lista detallada basada en código]
+
+### 3.3 Objetivos No Funcionales
+[Lista detallada con métricas]
+
+## 4. Vista de Contexto del Sistema
+
+### 4.1 Diagrama de Contexto
+[Descripción textual del contexto: actores, sistemas externos, integraciones]
+
+### 4.2 Actores del Sistema
+
+| Actor | Tipo | Descripción | Interacción |
+|-------|------|-------------|-------------|
+| [Actor] | Humano/Sistema | [Descripción] | [Cómo interactúa] |
+
+### 4.3 Sistemas Externos
+
+| Sistema | Protocolo | Propósito | SLA |
+|---------|-----------|-----------|-----|
+| [Sistema] | [HTTP/WS/etc] | [Propósito] | [Disponibilidad] |
+
+## 5. Vista de Contenedores
+
+### 5.1 Contenedores del Sistema
+
+| Contenedor | Tecnología | Responsabilidad | Puerto |
+|------------|------------|-----------------|--------|
+| [Nombre] | [Tech] | [Responsabilidad detallada] | [Puerto] |
+
+### 5.2 Comunicación entre Contenedores
+[Descripción detallada de protocolos y patrones de comunicación]
+
+## 6. Vista de Componentes
+
+### 6.1 Inventario de Componentes
+
+| Componente | Capa | Responsabilidad | Dependencias | Archivo |
+|------------|------|-----------------|--------------|---------|
+| [Nombre] | [Capa] | [Responsabilidad detallada] | [Deps] | [Path] |
+
+### 6.2 Matriz de Dependencias
+
+[Tabla de dependencias entre componentes]
+
+### 6.3 Descripción Detallada de Componentes
+
+#### 6.3.1 [Componente 1]
+- **Responsabilidad**: [Descripción extensa]
+- **Interfaz pública**: [Métodos/endpoints]
+- **Dependencias**: [Lista]
+- **Consideraciones**: [Notas técnicas]
+
+## 7. Diagrama de Arquitectura de Alto Nivel
+
+### 7.1 Vista Profesional (D2)
+
+[PLACEHOLDER_D2_DIAGRAM]
+
+### 7.2 Vista Técnica Detallada (Mermaid)
+
+[PLACEHOLDER_MERMAID_DIAGRAM]
+
+### 7.3 Descripción de la Arquitectura
+[3-4 párrafos describiendo la arquitectura mostrada en los diagramas, capas, flujos y decisiones]
+
+## 8. Flujo de Datos y Secuencias
+
+### 8.1 Flujo Principal de la Aplicación
+
+| Paso | Componente Origen | Acción | Componente Destino | Datos |
+|------|-------------------|--------|--------------------|-------|
+| 1    | [Origen] | [Acción detallada] | [Destino] | [Tipo de datos] |
+
+### 8.2 Flujos Secundarios
+[Descripción detallada de cada flujo alternativo]
+
+### 8.3 Flujo de Errores
+[Cómo se propagan y manejan los errores a través de las capas]
+
+## 9. Modelo de Datos
+
+### 9.1 Diagrama Entidad-Relación
+
+[PLACEHOLDER_ER_DIAGRAM]
+
+### 9.2 Descripción de Entidades
+
+| Entidad | Descripción | Campos Clave | Relaciones | Índices |
+|---------|-------------|--------------|------------|---------|
+| [Nombre] | [Descripción detallada] | [PK, FK] | [Relaciones] | [Índices] |
+
+### 9.3 Estrategia de Migración de Datos
+[Descripción de cómo se gestionan las migraciones]
+
+## 10. Stack Tecnológico Detallado
+
+### 10.1 Diagrama de Stack
+
+| Capa | Tecnología | Versión | Justificación | Alternativas Evaluadas |
+|------|------------|---------|---------------|----------------------|
+| Runtime | [Tech] | [Ver] | [Por qué se eligió] | [Alternativas] |
+| Framework | [Tech] | [Ver] | [Por qué se eligió] | [Alternativas] |
+| Base de Datos | [Tech] | [Ver] | [Por qué se eligió] | [Alternativas] |
+| ORM | [Tech] | [Ver] | [Por qué se eligió] | [Alternativas] |
+
+### 10.2 Matriz de Compatibilidad
+[Versiones compatibles entre tecnologías]
+
+## 11. Patrones de Diseño Implementados
+
+### 11.1 Catálogo de Patrones
+
+| Patrón | Categoría | Ubicación en Código | Problema que Resuelve |
+|--------|-----------|--------------------|-----------------------|
+| [Patrón] | Creacional/Estructural/Comportamiento | [Archivo] | [Problema] |
+
+### 11.2 Detalle de Implementación
+[Para cada patrón: descripción, diagrama conceptual, código ejemplo del proyecto]
+
+## 12. Decisiones Arquitectónicas (ADR)
+
+### ADR-001: [Decisión]
+- **Estado**: Aceptada
+- **Contexto**: [Contexto detallado]
+- **Decisión**: [Qué se decidió]
+- **Consecuencias**: [Positivas y negativas]
+- **Alternativas descartadas**: [Lista con razones]
+
+## 13. Seguridad y Control de Acceso
+
+### 13.1 Modelo de Amenazas (STRIDE)
+
+| Amenaza | Categoría | Mitigación | Estado |
+|---------|-----------|------------|--------|
+| [Amenaza] | S/T/R/I/D/E | [Mitigación implementada] | [Implementada/Pendiente] |
+
+### 13.2 Medidas Implementadas
+[Descripción exhaustiva de cada medida de seguridad encontrada en el código]
+
+### 13.3 Flujo de Autenticación/Autorización
+[Descripción detallada si existe en el código]
+
+## 14. Rendimiento y Optimización
+
+### 14.1 Objetivos de Rendimiento
+
+| Escenario | Métrica | Objetivo | Estrategia |
+|-----------|---------|----------|------------|
+| [Escenario] | [Métrica] | [Valor] | [Cómo se logra] |
+
+### 14.2 Optimizaciones Implementadas
+[Lista detallada basada en el código real]
+
+### 14.3 Cuellos de Botella Identificados
+[Análisis basado en la arquitectura]
+
+## 15. Escalabilidad y Disponibilidad
+
+### 15.1 Estrategia de Escalabilidad
+[Horizontal vs Vertical, justificación]
+
+### 15.2 Puntos de Escalabilidad
+[Componentes que pueden escalar y cómo]
+
+## 16. Observabilidad y Monitoreo
+
+### 16.1 Estrategia de Logging
+[Niveles, formato, destinos]
+
+### 16.2 Métricas Clave
+[Lista de métricas a monitorear]
+
+### 16.3 Alertas
+[Condiciones de alerta]
+
+## 17. Estrategia de Testing
+
+### 17.1 Pirámide de Testing
+
+| Nivel | Herramienta | Cobertura Objetivo | Responsable |
+|-------|-------------|-------------------|-------------|
+| Unitario | [Tool] | > 80% | Desarrollador |
+| Integración | [Tool] | > 70% | Equipo |
+| E2E | [Tool] | > 60% | QA |
+
+### 17.2 Estrategia por Componente
+[Qué se testea en cada componente y cómo]
+
+## 18. Gestión de Configuración
+
+### 18.1 Variables de Entorno
+
+| Variable | Tipo | Sensible | Descripción | Valor por Defecto |
+|----------|------|----------|-------------|-------------------|
+| [VAR] | [tipo] | Sí/No | [Descripción] | [Default] |
+
+### 18.2 Perfiles de Configuración
+[Desarrollo, staging, producción]
+
+## 19. Riesgos Técnicos y Mitigaciones
+
+| ID | Riesgo | Probabilidad | Impacto | Mitigación | Estado |
+|----|--------|-------------|---------|------------|--------|
+| R-001 | [Riesgo] | Alta/Media/Baja | Alto/Medio/Bajo | [Mitigación] | [Estado] |
+
+## 20. Roadmap Arquitectónico
+
+### Corto Plazo (1-3 meses)
+[Mejoras arquitectónicas prioritarias]
+
+### Mediano Plazo (3-6 meses)
+[Evolución planificada]
+
+### Largo Plazo (6-12 meses)
+[Visión arquitectónica]
+
+---
+
+<div align="center">
+
+## Apéndices
+
+### A. Glosario Técnico
+[Términos técnicos usados en el documento]
+
+### B. Historial de Cambios Arquitectónicos
+[Log de decisiones]
+
+---
+
+**Documento generado automáticamente por ${ORION_BRAND} ${ORION_VERSION}**
+*${fullDate}*
+
+[![${ORION_BRAND.replace(' ', '%20')}](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-Architecture%20Doc-purple.svg?style=for-the-badge)]()
+
+*Conforme a estándares IEEE 1471 / ISO/IEC 42010*
+
+</div>
+
+IMPORTANTE: 
+- Cada sección DEBE tener contenido sustancial (mínimo 3-4 párrafos o tabla completa)
+- NO dejes secciones vacías o con contenido genérico
+- Analiza CADA archivo proporcionado para extraer información real
+- Tono estrictamente profesional y académico
+- Sin emojis en ninguna parte`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 7000,
+      max_tokens: 12000,
       temperature: 0.2,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -424,174 +761,576 @@ IMPORTANTE: Tono profesional y técnico. Sin emojis.`;
 
     let documentation = content.text;
 
-    // Insertar AMBOS diagramas
+    // Insertar diagramas generados
     documentation = documentation.replace(
-      '[PLACEHOLDER - Diagrama D2 Profesional]',
+      '[PLACEHOLDER_D2_DIAGRAM]',
       `\`\`\`d2\n${d2Diagram}\n\`\`\``
     );
 
     documentation = documentation.replace(
-      '[PLACEHOLDER - Diagrama Mermaid]',
+      '[PLACEHOLDER_MERMAID_DIAGRAM]',
       `\`\`\`mermaid\n${architectureDiagram}\n\`\`\``
     );
 
     documentation = documentation.replace(
-      /## Modelo de Datos\n\n\[PLACEHOLDER - Se insertará automáticamente\]/,
-      `## Modelo de Datos\n\n\`\`\`mermaid\n${erDiagram}\n\`\`\``
+      '[PLACEHOLDER_ER_DIAGRAM]',
+      erDiagram ? `\`\`\`mermaid\n${erDiagram}\n\`\`\`` : '*No se encontró esquema de base de datos (Prisma) para generar el diagrama ER.*'
     );
 
     return documentation;
   }
 
   /**
-   * Genera documentación de API
+   * Genera documentación de API exhaustiva - Estilo OpenAPI/Swagger profesional
    */
   async generateApiDocs(project: ProjectWithSources): Promise<string> {
     const filesContent = await this.readProjectFiles(project.projectSources);
+    const currentDate = getFormattedDate();
+    const fullDate = getFullFormattedDate();
 
+    // Filtrar archivos relevantes para API con más categorías
     const routeFiles = Object.entries(filesContent).filter(
-      ([name]) => name.includes('route') || name.includes('controller')
+      ([name]) => name.includes('route') || name.includes('controller') || name.includes('router')
+    );
+    const middlewareFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('middleware') || name.includes('guard') || name.includes('auth')
+    );
+    const validationFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('validat') || name.includes('schema') || name.includes('dto')
+    );
+    const serviceFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('service') || name.includes('Service')
+    );
+    const modelFiles = Object.entries(filesContent).filter(
+      ([name]) => name.includes('model') || name.includes('type') || name.includes('interface') || name.includes('prisma')
     );
 
-    const prompt = `Genera documentación de API profesional para "${project.name}".
+    const prompt = `Genera documentación de API EXHAUSTIVA y PROFESIONAL para "${project.name}".
+
+**CONTEXTO CRÍTICO:**
+Esta documentación será usada por desarrolladores frontend y equipos de integración. 
+Debe ser tan completa como una documentación Swagger/OpenAPI generada automáticamente.
+Debe incluir branding "${ORION_BRAND}" y la fecha "${currentDate}".
 
 **IMPORTANTE:** 
 - Responde SOLO en español
-- Sin emojis, formato técnico empresarial
+- Sin emojis, formato técnico empresarial estricto
 - Estilo OpenAPI/Swagger profesional
+- Documenta CADA endpoint encontrado en los archivos de rutas
+- Incluye TODOS los parámetros, headers, body, query params
+- Documenta TODOS los posibles códigos de respuesta para cada endpoint
+- Incluye ejemplos de request/response REALES basados en el código
+- Si hay middleware de autenticación, documenta el flujo completo
+- Si hay validaciones, documenta los esquemas de validación exactos
+- Genera diagramas de flujo para endpoints complejos
 
-**ARCHIVOS DE RUTAS:**
+**ARCHIVOS DE RUTAS/CONTROLADORES (análisis exhaustivo):**
 ${routeFiles
-        .map(([name, content]) => `### ${name}\n${content.slice(0, 2000)}`)
+        .map(([name, content]) => `### ${name}\n\`\`\`typescript\n${content.slice(0, 3000)}\n\`\`\``)
         .join('\n\n')}
 
-**ESTRUCTURA:**
+**ARCHIVOS DE MIDDLEWARE/AUTENTICACIÓN:**
+${middlewareFiles
+        .map(([name, content]) => `### ${name}\n\`\`\`typescript\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
 
-# API Documentation - ${project.name}
+**ARCHIVOS DE VALIDACIÓN/SCHEMAS:**
+${validationFiles
+        .map(([name, content]) => `### ${name}\n\`\`\`typescript\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
+
+**ARCHIVOS DE SERVICIOS (lógica de negocio):**
+${serviceFiles
+        .map(([name, content]) => `### ${name}\n\`\`\`typescript\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
+
+**ARCHIVOS DE MODELOS/TIPOS:**
+${modelFiles
+        .map(([name, content]) => `### ${name}\n\`\`\`typescript\n${content.slice(0, 2000)}\n\`\`\``)
+        .join('\n\n')}
+
+**TODOS LOS ARCHIVOS (contexto adicional):**
+${Object.entries(filesContent)
+        .slice(0, 15)
+        .map(([name, content]) => `### ${name}\n\`\`\`\n${content.slice(0, 1000)}\n\`\`\``)
+        .join('\n\n')}
+
+**ESTRUCTURA REQUERIDA (EXHAUSTIVA - cada endpoint debe estar completamente documentado):**
+
+<div align="center">
+
+# Documentación de API
+
+## ${project.name}
+
+[![API](https://img.shields.io/badge/API-REST-blue.svg?style=for-the-badge)]()
+[![Version](https://img.shields.io/badge/API%20Version-1.0-green.svg?style=for-the-badge)]()
+[![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg?style=for-the-badge)]()
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-85EA2D.svg?style=for-the-badge&logo=swagger&logoColor=black)]()
+[![${ORION_BRAND.replace(' ', '%20')}](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-Generated-purple.svg?style=for-the-badge)]()
+
+*Documentación de API generada por ${ORION_BRAND} | ${currentDate}*
+
+</div>
+
+---
 
 ## Tabla de Contenidos
 
-1. [Información General](#información-general)
-2. [Autenticación](#autenticación)
-3. [Endpoints](#endpoints)
-4. [Modelos de Datos](#modelos-de-datos)
-5. [Códigos de Estado](#códigos-de-estado)
-6. [Manejo de Errores](#manejo-de-errores)
+1. [Información General](#1-información-general)
+2. [Autenticación y Autorización](#2-autenticación-y-autorización)
+3. [Convenciones de la API](#3-convenciones-de-la-api)
+4. [Rate Limiting y Throttling](#4-rate-limiting-y-throttling)
+5. [Resumen de Endpoints](#5-resumen-de-endpoints)
+6. [Endpoints Detallados](#6-endpoints-detallados)
+7. [Modelos de Datos](#7-modelos-de-datos)
+8. [Esquemas de Validación](#8-esquemas-de-validación)
+9. [Códigos de Estado y Errores](#9-códigos-de-estado-y-errores)
+10. [Flujos de Integración](#10-flujos-de-integración)
+11. [Ejemplos de Integración](#11-ejemplos-de-integración)
+12. [Changelog de la API](#12-changelog-de-la-api)
 
-## Información General
+---
 
-### Base URL
+## 1. Información General
 
-\`\`\`
-[URL base del proyecto]
-\`\`\`
+### 1.1 Base URL
 
-### Formato de Respuesta
+| Entorno | URL | Descripción |
+|---------|-----|-------------|
+| Desarrollo | \`http://localhost:[PUERTO]\` | Entorno local |
+| Staging | \`[URL]\` | Pre-producción |
+| Producción | \`[URL]\` | Producción |
 
-Todas las respuestas siguen el formato:
+### 1.2 Formato de Comunicación
+
+| Aspecto | Valor |
+|---------|-------|
+| Protocolo | HTTPS (HTTP en desarrollo) |
+| Content-Type | application/json |
+| Encoding | UTF-8 |
+| Formato de fechas | ISO 8601 |
+
+### 1.3 Formato de Respuesta Estándar
+
+**Respuesta exitosa:**
 
 \`\`\`json
 {
-  "success": boolean,
-  "data": object | array,
-  "error": string | null
+  "success": true,
+  "data": { },
+  "message": "Operación exitosa",
+  "metadata": {
+    "timestamp": "2024-01-01T00:00:00.000Z",
+    "requestId": "uuid"
+  }
 }
 \`\`\`
 
-## Autenticación
+**Respuesta con paginación:**
 
-[Describir método de autenticación basado en el código]
-
-### Headers Requeridos
-
-\`\`\`http
-Authorization: Bearer {token}
-Content-Type: application/json
+\`\`\`json
+{
+  "success": true,
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "totalPages": 10,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
 \`\`\`
 
-## Endpoints
+**Respuesta de error:**
 
-### [Recurso 1]
+\`\`\`json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Descripción del error",
+    "details": [],
+    "timestamp": "2024-01-01T00:00:00.000Z"
+  }
+}
+\`\`\`
 
-#### [Método] /ruta
+## 2. Autenticación y Autorización
 
-**Descripción:** [Descripción técnica]
+### 2.1 Método de Autenticación
+[Documentar basado en middleware encontrado: JWT, API Key, OAuth, etc.]
 
-**Request:**
-
-| Parámetro | Tipo | Ubicación | Requerido | Descripción |
-|-----------|------|-----------|-----------|-------------|
-| [param]   | [tipo] | [loc]   | [sí/no]   | [desc]      |
-
-**Ejemplo Request:**
+### 2.2 Headers de Autenticación
 
 \`\`\`http
-POST /api/recurso HTTP/1.1
-Host: localhost:3000
+Authorization: Bearer {access_token}
+Content-Type: application/json
+X-Request-ID: {uuid}
+\`\`\`
+
+### 2.3 Flujo de Autenticación
+[Diagrama paso a paso del flujo]
+
+### 2.4 Roles y Permisos
+
+| Rol | Descripción | Permisos |
+|-----|-------------|----------|
+| [Rol] | [Descripción] | [Lista de permisos] |
+
+## 3. Convenciones de la API
+
+### 3.1 Nomenclatura de URLs
+
+| Convención | Ejemplo | Descripción |
+|------------|---------|-------------|
+| Plurales | /api/users | Colecciones |
+| Kebab-case | /api/user-profiles | Recursos compuestos |
+| Versionado | /api/v1/... | Prefijo de versión |
+
+### 3.2 Métodos HTTP
+
+| Método | Uso | Idempotente | Body |
+|--------|-----|-------------|------|
+| GET | Obtener recurso(s) | Sí | No |
+| POST | Crear recurso | No | Sí |
+| PUT | Actualizar completo | Sí | Sí |
+| PATCH | Actualizar parcial | No | Sí |
+| DELETE | Eliminar recurso | Sí | No |
+
+### 3.3 Parámetros de Query Estándar
+
+| Parámetro | Tipo | Descripción | Ejemplo |
+|-----------|------|-------------|---------|
+| page | number | Página actual | ?page=1 |
+| limit | number | Elementos por página | ?limit=10 |
+| sort | string | Campo de ordenamiento | ?sort=createdAt |
+| order | string | Dirección (asc/desc) | ?order=desc |
+| search | string | Búsqueda general | ?search=texto |
+| filter | object | Filtros específicos | ?filter[status]=active |
+
+## 4. Rate Limiting y Throttling
+
+| Endpoint | Límite | Ventana | Header de Respuesta |
+|----------|--------|---------|---------------------|
+| General | [X] req | [Y] min | X-RateLimit-Remaining |
+| Auth | [X] req | [Y] min | X-RateLimit-Remaining |
+
+## 5. Resumen de Endpoints
+
+### Mapa Visual de la API
+
+| Recurso | GET | POST | PUT | PATCH | DELETE |
+|---------|-----|------|-----|-------|--------|
+| [/api/recurso] | Lista/Detalle | Crear | Actualizar | Parcial | Eliminar |
+
+### Tabla Completa de Endpoints
+
+| # | Método | Ruta | Descripción | Auth | Rate Limit |
+|---|--------|------|-------------|------|------------|
+| 1 | [MÉTODO] | [/api/ruta] | [Descripción detallada] | [Sí/No] | [Límite] |
+
+## 6. Endpoints Detallados
+
+[Para CADA endpoint encontrado en el código, documentar EXHAUSTIVAMENTE:]
+
+### 6.1 [Nombre del Recurso]
+
+---
+
+#### [MÉTODO] \`/api/ruta\`
+
+**Descripción:** [Descripción técnica detallada de qué hace este endpoint]
+
+**Autenticación:** [Requerida/No requerida - Tipo]
+
+**Permisos:** [Roles permitidos]
+
+**Middleware aplicado:** [Lista de middleware en orden de ejecución]
+
+##### Headers
+
+| Header | Tipo | Requerido | Descripción |
+|--------|------|-----------|-------------|
+| Authorization | string | Sí/No | Bearer token |
+| Content-Type | string | Sí | application/json |
+
+##### Path Parameters
+
+| Parámetro | Tipo | Requerido | Descripción | Validación |
+|-----------|------|-----------|-------------|------------|
+| [param]   | [tipo] | [Sí/No] | [Descripción detallada] | [Reglas] |
+
+##### Query Parameters
+
+| Parámetro | Tipo | Requerido | Default | Descripción | Ejemplo |
+|-----------|------|-----------|---------|-------------|---------|
+| [param]   | [tipo] | [Sí/No] | [default] | [Descripción] | [Ejemplo] |
+
+##### Request Body
+
+\`\`\`typescript
+interface RequestBody {
+  campo1: tipo; // Descripción - Requerido
+  campo2?: tipo; // Descripción - Opcional
+}
+\`\`\`
+
+**Ejemplo de Request:**
+
+\`\`\`http
+[MÉTODO] /api/ruta HTTP/1.1
+Host: localhost:[PUERTO]
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
 Content-Type: application/json
 
 {
-  "campo": "valor"
+  "campo1": "valor_ejemplo",
+  "campo2": "valor_ejemplo"
 }
 \`\`\`
 
-**Response 200:**
+**cURL:**
+
+\`\`\`bash
+curl -X [MÉTODO] \\
+  http://localhost:[PUERTO]/api/ruta \\
+  -H 'Authorization: Bearer TOKEN' \\
+  -H 'Content-Type: application/json' \\
+  -d '{
+    "campo1": "valor",
+    "campo2": "valor"
+  }'
+\`\`\`
+
+##### Respuestas
+
+**200 OK - Éxito:**
 
 \`\`\`json
 {
   "success": true,
   "data": {
-    "id": "uuid",
-    "campo": "valor"
+    "id": "uuid-ejemplo",
+    "campo1": "valor",
+    "createdAt": "2024-01-01T00:00:00.000Z"
   }
 }
 \`\`\`
 
-**Response 400:**
+**400 Bad Request - Error de validación:**
 
 \`\`\`json
 {
   "success": false,
-  "error": "Mensaje de error"
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Error de validación",
+    "details": [
+      {
+        "field": "campo1",
+        "message": "El campo es requerido"
+      }
+    ]
+  }
 }
 \`\`\`
 
-## Modelos de Datos
+**401 Unauthorized:**
 
-### [Modelo]
-
-\`\`\`typescript
-interface Modelo {
-  campo1: tipo;
-  campo2: tipo;
+\`\`\`json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Token no proporcionado o inválido"
+  }
 }
 \`\`\`
 
-## Códigos de Estado
+**404 Not Found:**
 
-| Código | Descripción |
-|--------|-------------|
-| 200    | OK          |
-| 201    | Created     |
-| 400    | Bad Request |
-| 401    | Unauthorized|
-| 404    | Not Found   |
-| 500    | Server Error|
+\`\`\`json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Recurso no encontrado"
+  }
+}
+\`\`\`
 
-## Manejo de Errores
+**500 Internal Server Error:**
 
-[Describir estrategia de errores]
+\`\`\`json
+{
+  "success": false,
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "Error interno del servidor"
+  }
+}
+\`\`\`
 
 ---
 
-**Versión:** 1.0.0
-**Última actualización:** [Fecha]
+[REPETIR PARA CADA ENDPOINT ENCONTRADO EN EL CÓDIGO]
 
-IMPORTANTE: Formato profesional, sin emojis.`;
+## 7. Modelos de Datos
+
+### 7.1 Diagrama de Modelos
+
+[Diagrama mermaid classDiagram con todos los modelos/interfaces]
+
+### 7.2 Detalle de Modelos
+
+[Para cada modelo/interface encontrado:]
+
+#### [NombreModelo]
+
+\`\`\`typescript
+interface NombreModelo {
+  id: string;           // Identificador único (UUID)
+  campo1: string;       // Descripción del campo
+  campo2: number;       // Descripción del campo
+  createdAt: Date;      // Fecha de creación
+  updatedAt: Date;      // Fecha de actualización
+}
+\`\`\`
+
+| Campo | Tipo | Requerido | Descripción | Validaciones |
+|-------|------|-----------|-------------|--------------|
+| id    | UUID | Auto | Identificador único | - |
+| campo1 | string | Sí | [Descripción] | [min: X, max: Y] |
+
+## 8. Esquemas de Validación
+
+[Para cada endpoint que tenga validación:]
+
+### 8.1 [Endpoint] - Esquema de Validación
+
+\`\`\`typescript
+{
+  campo1: {
+    tipo: "string",
+    requerido: true,
+    minLength: 3,
+    maxLength: 255
+  }
+}
+\`\`\`
+
+## 9. Códigos de Estado y Errores
+
+### 9.1 Códigos HTTP Utilizados
+
+| Código | Estado | Descripción | Cuándo se Usa |
+|--------|--------|-------------|---------------|
+| 200 | OK | Solicitud exitosa | GET, PUT, PATCH exitosos |
+| 201 | Created | Recurso creado | POST exitoso |
+| 204 | No Content | Sin contenido | DELETE exitoso |
+| 400 | Bad Request | Error del cliente | Validación fallida |
+| 401 | Unauthorized | No autenticado | Token faltante/inválido |
+| 403 | Forbidden | No autorizado | Sin permisos |
+| 404 | Not Found | No encontrado | Recurso inexistente |
+| 409 | Conflict | Conflicto | Duplicado/conflicto |
+| 422 | Unprocessable | No procesable | Lógica de negocio |
+| 429 | Too Many Req | Rate limit | Exceso de peticiones |
+| 500 | Server Error | Error interno | Error del servidor |
+
+### 9.2 Catálogo de Errores de Negocio
+
+| Código | Mensaje | Descripción | Resolución |
+|--------|---------|-------------|------------|
+| [CODE] | [Mensaje] | [Cuándo ocurre] | [Cómo resolverlo] |
+
+## 10. Flujos de Integración
+
+### 10.1 Flujo de [Proceso Principal]
+
+[Diagrama de secuencia mermaid mostrando el flujo completo]
+
+### 10.2 Guía de Integración Paso a Paso
+
+1. **Paso 1 - Autenticación**: [Descripción con ejemplo]
+2. **Paso 2 - [Acción]**: [Descripción con ejemplo]
+3. **Paso 3 - [Acción]**: [Descripción con ejemplo]
+
+## 11. Ejemplos de Integración
+
+### 11.1 JavaScript/TypeScript (Fetch)
+
+\`\`\`typescript
+const response = await fetch('http://localhost:[PUERTO]/api/recurso', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    campo1: 'valor'
+  })
+});
+
+const data = await response.json();
+\`\`\`
+
+### 11.2 Python (requests)
+
+\`\`\`python
+import requests
+
+response = requests.post(
+    'http://localhost:[PUERTO]/api/recurso',
+    headers={'Authorization': f'Bearer {token}'},
+    json={'campo1': 'valor'}
+)
+
+data = response.json()
+\`\`\`
+
+### 11.3 cURL
+
+\`\`\`bash
+curl -X POST http://localhost:[PUERTO]/api/recurso \\
+  -H "Authorization: Bearer TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"campo1": "valor"}'
+\`\`\`
+
+## 12. Changelog de la API
+
+| Versión | Fecha | Cambios |
+|---------|-------|---------|
+| 1.0.0 | ${fullDate} | Versión inicial de la API |
+
+---
+
+<div align="center">
+
+**Documentación de API generada automáticamente por ${ORION_BRAND} ${ORION_VERSION}**
+*${fullDate}*
+
+[![${ORION_BRAND.replace(' ', '%20')}](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-API%20Docs-purple.svg?style=for-the-badge)]()
+
+*Conforme a especificación OpenAPI 3.0*
+
+</div>
+
+IMPORTANTE:
+- Documenta ABSOLUTAMENTE TODOS los endpoints que encuentres en el código
+- Cada endpoint debe tener request Y response examples COMPLETOS
+- Incluye ejemplos de cURL para cada endpoint
+- No dejes ningún placeholder sin rellenar
+- Tono profesional y técnico sin emojis
+- Si un endpoint tiene validaciones, documenta CADA regla de validación
+- Si hay middleware, documenta el orden de ejecución`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      max_tokens: 12000,
       temperature: 0.2,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -609,116 +1348,284 @@ IMPORTANTE: Formato profesional, sin emojis.`;
   }
 
   /**
-   * Genera guía de contribución
+   * Genera guía de contribución profesional con branding Orion AI
    */
   async generateContributing(project: ProjectWithSources): Promise<string> {
-    const prompt = `Genera CONTRIBUTING.md profesional para "${project.name}" (${project.type}).
+    const filesContent = await this.readProjectFiles(project.projectSources);
+    const currentDate = getFormattedDate();
+    const fullDate = getFullFormattedDate();
+
+    // Extraer información del package.json para personalizar la guía
+    const packageJsonContent = Object.entries(filesContent).find(
+      ([name]) => name === 'package.json'
+    );
+    const tsConfigContent = Object.entries(filesContent).find(
+      ([name]) => name === 'tsconfig.json'
+    );
+    const eslintContent = Object.entries(filesContent).find(
+      ([name]) => name.includes('eslint') || name.includes('.prettierrc')
+    );
+
+    const prompt = `Genera CONTRIBUTING.md PROFESIONAL y EXHAUSTIVO para "${project.name}" (${project.type}).
+
+**CONTEXTO:**
+Debe incluir branding "${ORION_BRAND}" y fecha "${currentDate}".
+Analiza los archivos de configuración para personalizar las guías.
 
 **IMPORTANTE:** 
 - Responde SOLO en español
-- Sin emojis, tono profesional
+- Sin emojis, tono profesional y corporativo
 - Formato empresarial estricto
+- Personaliza basándote en las herramientas REALES del proyecto
 
-**ESTRUCTURA:**
+**ARCHIVOS DE CONFIGURACIÓN:**
+${packageJsonContent ? `### package.json\n\`\`\`json\n${packageJsonContent[1].slice(0, 2000)}\n\`\`\`` : 'No disponible'}
+
+${tsConfigContent ? `### tsconfig.json\n\`\`\`json\n${tsConfigContent[1].slice(0, 1000)}\n\`\`\`` : ''}
+
+${eslintContent ? `### ESLint/Prettier Config\n\`\`\`\n${eslintContent[1].slice(0, 1000)}\n\`\`\`` : ''}
+
+**ESTRUCTURA REQUERIDA:**
+
+<div align="center">
 
 # Guía de Contribución
+
+## ${project.name}
+
+[![Contributing](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge)]()
+[![Code Style](https://img.shields.io/badge/code%20style-standard-blue.svg?style=for-the-badge)]()
+[![${ORION_BRAND.replace(' ', '%20')}](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-Generated-purple.svg?style=for-the-badge)]()
+
+*Guía de contribución generada por ${ORION_BRAND} | ${currentDate}*
+
+</div>
+
+---
 
 ## Tabla de Contenidos
 
 1. [Introducción](#introducción)
 2. [Código de Conducta](#código-de-conducta)
-3. [Cómo Contribuir](#cómo-contribuir)
-4. [Configuración del Entorno](#configuración-del-entorno)
-5. [Estándares de Código](#estándares-de-código)
-6. [Testing](#testing)
-7. [Proceso de Pull Request](#proceso-de-pull-request)
-8. [Convenciones](#convenciones)
+3. [Primeros Pasos](#primeros-pasos)
+4. [Configuración del Entorno de Desarrollo](#configuración-del-entorno-de-desarrollo)
+5. [Flujo de Trabajo de Desarrollo](#flujo-de-trabajo-de-desarrollo)
+6. [Estándares de Código](#estándares-de-código)
+7. [Convenciones de Commits](#convenciones-de-commits)
+8. [Proceso de Pull Request](#proceso-de-pull-request)
+9. [Reportar Issues](#reportar-issues)
+10. [Testing](#testing)
+11. [Documentación](#documentación)
+12. [Revisión de Código](#revisión-de-código)
+13. [Release Process](#release-process)
+14. [Preguntas Frecuentes](#preguntas-frecuentes)
 
 ## Introducción
 
-Agradecemos su interés en contribuir a ${project.name}. Este documento establece las pautas para contribuir efectivamente al proyecto.
+[2-3 párrafos de bienvenida profesional]
 
 ## Código de Conducta
 
-### Principios
+### Principios Fundamentales
 
-1. Respeto profesional
-2. Comunicación constructiva
-3. Colaboración efectiva
-4. Calidad del código
+1. **Respeto profesional**: [Descripción]
+2. **Inclusividad**: [Descripción]
+3. **Comunicación constructiva**: [Descripción]
+4. **Responsabilidad**: [Descripción]
 
-## Cómo Contribuir
+### Comportamiento Esperado
 
-### Reportar Issues
+- [Lista detallada]
 
-1. Verificar que el issue no exista
-2. Usar el template correspondiente
-3. Proporcionar información completa
-4. Incluir pasos de reproducción
+### Comportamiento Inaceptable
 
-### Sugerir Features
+- [Lista detallada]
 
-1. Abrir un issue de tipo "Feature Request"
-2. Describir el problema a resolver
-3. Proponer solución detallada
-4. Considerar impacto en arquitectura
+## Primeros Pasos
 
-## Configuración del Entorno
+### Requisitos del Sistema
 
-### Requisitos
+| Requisito | Versión Mínima | Verificación |
+|-----------|---------------|--------------|
+| [Req] | [Ver] | [Comando] |
 
-- Node.js >= 14.0.0
-- Git
-- [Otros requisitos]
-
-### Setup
+### Fork y Clonación
 
 \`\`\`bash
-# Clonar repositorio
-git clone [URL]
+# Fork del repositorio (via GitHub)
 
-# Instalar dependencias
+# Clonar fork
+git clone https://github.com/TU_USUARIO/${project.name}.git
+cd ${project.name}
+
+# Agregar upstream
+git remote add upstream https://github.com/ORIGINAL/${project.name}.git
+
+# Verificar remotes
+git remote -v
+\`\`\`
+
+## Configuración del Entorno de Desarrollo
+
+### Instalación Paso a Paso
+
+\`\`\`bash
+# 1. Instalar dependencias
 npm install
 
-# Configurar entorno
+# 2. Configurar variables de entorno
 cp .env.example .env
+# Editar .env con tus valores
 
-# Ejecutar tests
+# 3. Configurar base de datos (si aplica)
+npx prisma generate
+npx prisma db push
+
+# 4. Verificar que todo funciona
+npm run dev
 npm test
 \`\`\`
 
+### IDE Recomendado
+
+[Configuración recomendada de VS Code con extensiones]
+
+## Flujo de Trabajo de Desarrollo
+
+### Diagrama de Flujo
+
+\`\`\`
+main ← PR ← feature/branch ← commits
+  ↑                              |
+  |______________________________|
+         Revisión + Merge
+\`\`\`
+
+### Pasos del Flujo
+
+1. **Crear rama desde main actualizado**
+2. **Desarrollar con commits atómicos**
+3. **Ejecutar tests y linting**
+4. **Crear Pull Request**
+5. **Revisión de código**
+6. **Merge a main**
+
 ## Estándares de Código
-
-### Naming Conventions
-
-- Variables: camelCase
-- Clases: PascalCase
-- Constantes: UPPER_SNAKE_CASE
-- Archivos: kebab-case
 
 ### TypeScript
 
-- Strict mode habilitado
-- Tipos explícitos
-- Sin any (salvo excepciones justificadas)
+[Reglas basadas en tsconfig.json real]
 
-### Linting
+### Naming Conventions
+
+| Elemento | Convención | Ejemplo |
+|----------|------------|---------|
+| Variables | camelCase | \`userName\` |
+| Constantes | UPPER_SNAKE_CASE | \`MAX_RETRIES\` |
+| Clases | PascalCase | \`UserService\` |
+| Interfaces | PascalCase con prefijo I | \`IUserRepository\` |
+| Tipos | PascalCase | \`UserResponse\` |
+| Archivos | kebab-case | \`user-service.ts\` |
+| Enums | PascalCase | \`UserRole\` |
+
+### Linting y Formateo
 
 \`\`\`bash
+# Verificar estilo
 npm run lint
+
+# Corregir automáticamente
 npm run lint:fix
+
+# Formatear código
+npm run format
 \`\`\`
+
+### Principios SOLID
+
+[Explicar cómo aplicar cada principio en el contexto del proyecto]
+
+## Convenciones de Commits
+
+### Formato Conventional Commits
+
+\`\`\`
+<tipo>(<alcance>): <descripción>
+
+[cuerpo opcional]
+
+[footer opcional]
+\`\`\`
+
+### Tipos de Commit
+
+| Tipo | Descripción | Ejemplo |
+|------|-------------|---------|
+| feat | Nueva funcionalidad | \`feat(auth): agregar login con OAuth\` |
+| fix | Corrección de bug | \`fix(api): corregir validación de email\` |
+| docs | Documentación | \`docs(readme): actualizar instalación\` |
+| style | Formato (sin cambio lógico) | \`style: aplicar prettier\` |
+| refactor | Refactorización | \`refactor(services): extraer lógica común\` |
+| test | Tests | \`test(auth): agregar tests de login\` |
+| chore | Mantenimiento | \`chore(deps): actualizar dependencias\` |
+| perf | Rendimiento | \`perf(db): optimizar queries\` |
+| ci | CI/CD | \`ci: agregar workflow de deploy\` |
+
+## Proceso de Pull Request
+
+### Checklist de Pre-envío
+
+- [ ] Rama actualizada desde main
+- [ ] Todos los tests pasan (\`npm test\`)
+- [ ] Linting sin errores (\`npm run lint\`)
+- [ ] Build exitoso (\`npm run build\`)
+- [ ] Documentación actualizada
+- [ ] Sin credenciales o datos sensibles
+- [ ] Commits con formato conventional
+
+### Template de Pull Request
+
+[Template completo con secciones]
+
+### Criterios de Aprobación
+
+| Criterio | Requisito |
+|----------|-----------|
+| Tests | Todos pasan, cobertura >= 80% |
+| Revisores | Mínimo 1 aprobación |
+| CI/CD | Pipeline verde |
+| Conflictos | Sin conflictos con main |
+
+## Reportar Issues
+
+### Template de Bug Report
+
+[Template completo]
+
+### Template de Feature Request
+
+[Template completo]
 
 ## Testing
 
-### Escribir Tests
+### Estructura de Tests
 
 \`\`\`typescript
-describe('Componente', () => {
-  it('debe realizar acción', () => {
-    // Arrange
-    // Act
-    // Assert
+describe('[Componente/Servicio]', () => {
+  // Setup
+  beforeEach(() => { });
+
+  describe('[Método/Funcionalidad]', () => {
+    it('debe [comportamiento esperado] cuando [condición]', () => {
+      // Arrange
+      // Act
+      // Assert
+    });
+
+    it('debe lanzar error cuando [condición de error]', () => {
+      // Arrange
+      // Act & Assert
+    });
   });
 });
 \`\`\`
@@ -726,99 +1633,77 @@ describe('Componente', () => {
 ### Ejecutar Tests
 
 \`\`\`bash
-npm test
-npm run test:coverage
+npm test              # Todos los tests
+npm run test:watch    # Watch mode
+npm run test:coverage # Con cobertura
 \`\`\`
 
-### Cobertura Mínima
+## Documentación
 
-- Statements: 80%
-- Branches: 75%
-- Functions: 85%
-- Lines: 80%
+### Reglas de Documentación
 
-## Proceso de Pull Request
+- JSDoc para todas las funciones públicas
+- README actualizado con cada feature
+- Comentarios para lógica compleja
 
-### Antes de Enviar
+### Ejemplo de JSDoc
 
-1. Actualizar rama desde main
-2. Ejecutar todos los tests
-3. Verificar linting
-4. Actualizar documentación
-
-### Branch Naming
-
-- feature/descripcion-corta
-- fix/descripcion-bug
-- refactor/descripcion-cambio
-- docs/descripcion-cambio
-
-### Commits
-
-Formato: \`tipo: descripción breve\`
-
-Tipos permitidos:
-- feat: Nueva característica
-- fix: Corrección de bug
-- refactor: Refactorización
-- docs: Documentación
-- test: Tests
-- chore: Mantenimiento
-
-### Template de PR
-
-\`\`\`markdown
-## Descripción
-[Descripción detallada]
-
-## Tipo de Cambio
-- [ ] Bug fix
-- [ ] Nueva feature
-- [ ] Refactorización
-- [ ] Documentación
-
-## Testing
-- [ ] Tests unitarios
-- [ ] Tests de integración
-- [ ] Tests manuales
-
-## Checklist
-- [ ] Código cumple estándares
-- [ ] Tests pasan
-- [ ] Documentación actualizada
-- [ ] Sin conflictos con main
+\`\`\`typescript
+/**
+ * Descripción de la función.
+ * 
+ * @param {string} param1 - Descripción del parámetro
+ * @returns {Promise<ResultType>} Descripción del retorno
+ * @throws {CustomError} Cuándo se lanza
+ * @example
+ * const result = await myFunction('value');
+ */
 \`\`\`
 
-## Convenciones
+## Revisión de Código
 
-### Documentación
+### Guía para Revisores
 
-- JSDoc para funciones públicas
-- README actualizado
-- CHANGELOG.md actualizado
+| Aspecto | Qué Verificar |
+|---------|---------------|
+| Funcionalidad | ¿Hace lo que dice? |
+| Tests | ¿Están completos? |
+| Seguridad | ¿Hay vulnerabilidades? |
+| Rendimiento | ¿Hay impacto? |
+| Legibilidad | ¿Se entiende? |
 
-### Git
+## Release Process
 
-- Commits atómicos
-- Mensajes descriptivos
-- No commits directos a main
-- Rebase antes de merge
+### Versionado Semántico
 
-## Contacto
+\`\`\`
+MAJOR.MINOR.PATCH
+  ↑      ↑     ↑
+  |      |     └─ Correcciones (backward compatible)
+  |      └─────── Funcionalidades (backward compatible)
+  └────────────── Cambios breaking
+\`\`\`
 
-Para dudas sobre contribuciones:
-- Email: [email]
-- Issues: [URL]
+## Preguntas Frecuentes
+
+[FAQ basado en el tipo de proyecto]
 
 ---
 
-**Última actualización:** [Fecha]
+<div align="center">
 
-IMPORTANTE: Mantener tono profesional y técnico.`;
+**Guía de contribución generada por ${ORION_BRAND} ${ORION_VERSION}**
+*${fullDate}*
+
+[![${ORION_BRAND.replace(' ', '%20')}](https://img.shields.io/badge/${ORION_BRAND.replace(' ', '%20')}-Contributing%20Guide-purple.svg?style=for-the-badge)]()
+
+</div>
+
+IMPORTANTE: Personaliza basándote en las herramientas REALES del proyecto. Sin emojis.`;
 
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 5000,
+      max_tokens: 8000,
       temperature: 0.2,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -836,7 +1721,7 @@ IMPORTANTE: Mantener tono profesional y técnico.`;
   }
 
   /**
-   * Lee archivos del proyecto desde las fuentes
+   * Lee archivos del proyecto desde las fuentes - Mejorado con lectura recursiva
    */
   private async readProjectFiles(
     sources: ProjectSource[]
@@ -846,17 +1731,7 @@ IMPORTANTE: Mantener tono profesional y técnico.`;
     for (const source of sources) {
       if (source.sourceType === 'local' && source.sourceUrl) {
         try {
-          const entries = await fs.readdir(source.sourceUrl, {
-            withFileTypes: true,
-          });
-
-          for (const entry of entries.slice(0, 20)) {
-            if (entry.isFile() && this.isRelevantFile(entry.name)) {
-              const filePath = path.join(source.sourceUrl, entry.name);
-              const content = await fs.readFile(filePath, 'utf-8');
-              files[entry.name] = content;
-            }
-          }
+          await this.readDirectoryRecursive(source.sourceUrl, files, '', 0, 3);
         } catch (error) {
           console.error(
             `Error leyendo archivos de ${source.sourceName}:`,
@@ -869,9 +1744,59 @@ IMPORTANTE: Mantener tono profesional y técnico.`;
     return files;
   }
 
+  /**
+   * Lee directorios recursivamente hasta una profundidad máxima
+   */
+  private async readDirectoryRecursive(
+    dirPath: string,
+    files: Record<string, string>,
+    relativePath: string,
+    currentDepth: number,
+    maxDepth: number
+  ): Promise<void> {
+    if (currentDepth > maxDepth || Object.keys(files).length >= 30) return;
+
+    const ignoredDirs = ['node_modules', '.git', 'dist', 'build', '.next', 'coverage', '.cache'];
+
+    try {
+      const entries = await fs.readdir(dirPath, { withFileTypes: true });
+
+      for (const entry of entries) {
+        if (Object.keys(files).length >= 30) break;
+
+        const entryRelativePath = relativePath
+          ? `${relativePath}/${entry.name}`
+          : entry.name;
+
+        if (entry.isDirectory() && !ignoredDirs.includes(entry.name)) {
+          await this.readDirectoryRecursive(
+            path.join(dirPath, entry.name),
+            files,
+            entryRelativePath,
+            currentDepth + 1,
+            maxDepth
+          );
+        } else if (entry.isFile() && this.isRelevantFile(entry.name)) {
+          const filePath = path.join(dirPath, entry.name);
+          const content = await fs.readFile(filePath, 'utf-8');
+          files[entryRelativePath] = content;
+        }
+      }
+    } catch (error) {
+      console.error(`Error leyendo directorio ${dirPath}:`, error);
+    }
+  }
+
   private isRelevantFile(filename: string): boolean {
-    const relevantExtensions = ['.ts', '.js', '.tsx', '.jsx', '.md', '.json'];
-    const irrelevantFiles = ['package-lock.json', 'yarn.lock'];
+    const relevantExtensions = [
+      '.ts', '.js', '.tsx', '.jsx', '.md', '.json',
+      '.prisma', '.env.example', '.yml', '.yaml',
+      '.toml', '.cfg', '.conf'
+    ];
+    const irrelevantFiles = [
+      'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+      '.DS_Store', 'thumbs.db'
+    ];
 
     return (
       relevantExtensions.some((ext) => filename.endsWith(ext)) &&

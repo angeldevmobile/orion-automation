@@ -22,6 +22,42 @@ export const errorHandler = (
 ) => {
   console.error('Error:', err);
 
+  // Multer - archivo demasiado grande
+  if (err.message?.includes('File too large')) {
+    return res.status(413).json({
+      success: false,
+      error: 'Archivo demasiado grande (máx 100MB)',
+      code: 'FILE_TOO_LARGE'
+    });
+  }
+
+  // Multer - tipo de archivo no permitido
+  if (err.message?.includes('Tipo de archivo no permitido')) {
+    return res.status(400).json({
+      success: false,
+      error: 'Tipo de archivo no permitido',
+      code: 'INVALID_FILE_TYPE'
+    });
+  }
+
+  // Rate limit de APIs externas (Claude/OpenAI)
+  if (err.message?.includes('429') || err.message?.includes('rate_limit')) {
+    return res.status(429).json({
+      success: false,
+      error: 'Límite de API externa alcanzado. Intente en unos minutos.',
+      code: 'EXTERNAL_RATE_LIMIT'
+    });
+  }
+
+  // CORS
+  if (err.message?.includes('Not allowed by CORS')) {
+    return res.status(403).json({
+      success: false,
+      error: 'Origen no permitido por CORS',
+      code: 'CORS_ERROR'
+    });
+  }
+
   // Prisma errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     // Unique constraint violation

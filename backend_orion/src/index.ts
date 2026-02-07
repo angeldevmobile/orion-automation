@@ -1,11 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import helmet from 'helmet';
 import routes from './routes/indexRoutes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import projectRoutes from './routes/projectRoutes.js';
 import diagramRoutes from './routes/diagramRoutes.js';
+import { generalLimiter, aiLimiter, authLimiter } from './middleware/rateLimiter.js';
+import { startCleanupScheduler } from './utils/cleanupOldUploads.js';
 
 dotenv.config();
 
@@ -33,12 +36,27 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Seguridad y rate limiting
+app.use(helmet());
+app.use(generalLimiter);
+
 app.use(express.json());
 
 // Log todas las peticiones
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
+});
+
+// Rate limiting específico (ANTES de las rutas)
+app.use('/api/auth', authLimiter);
+app.use('/api/projects/:id/generate', aiLimiter);
+app.use('/api/projects/:id/analyze', aiLimiter);
+app.use('/api/conversations', aiLimiter);
+
+// Health check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // API routes
@@ -54,7 +72,7 @@ app.get('/', (req, res) => {
     database: 'orion_automation',
     endpoints: {
       api: '/api',
-      health: '/api/health'
+      health: '/health'
     }
   });
 });
@@ -68,6 +86,10 @@ async function startServer() {
   if (!connected) {
     process.exit(1);
   }
+
+  // Iniciar limpieza automática de archivos temporales
+  startCleanupScheduler();
+
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     console.log(`CORS enabled for: ${allowedOrigins.join(', ')}`);

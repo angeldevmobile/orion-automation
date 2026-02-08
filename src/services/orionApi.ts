@@ -44,7 +44,7 @@ export interface Project {
   name: string;
   type: string;
   description: string | null;
-  createdAt: string; 
+  createdAt: string;
   updatedAt: string;
   settings?: Record<string, unknown>;
 }
@@ -422,7 +422,7 @@ export async function updateDecisionStatus(
   decisionId: string,
   status: 'pending' | 'confirmed' | 'rejected',
   token: string
-): Promise<ApiResponse<Decision>> { 
+): Promise<ApiResponse<Decision>> {
   try {
     const res = await fetch(getApiUrl(API_CONFIG.endpoints.decision(decisionId)), {
       method: 'PATCH',
@@ -438,7 +438,7 @@ export async function updateDecisionStatus(
     return res.json();
   } catch (error) {
     console.error('Error updating decision:', error);
-    throw error; 
+    throw error;
   }
 }
 
@@ -602,7 +602,7 @@ export async function forgotPassword(email: string): Promise<{ success: boolean;
 }
 
 export async function resetPassword(
-  token: string, 
+  token: string,
   newPassword: string
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
   const res = await fetch(getApiUrl(API_CONFIG.endpoints.resetPassword), {
@@ -611,6 +611,22 @@ export async function resetPassword(
     body: JSON.stringify({ token, newPassword }),
   });
   return res.json();
+}
+
+export async function deleteAccount(token: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.deleteAccount), {
+      method: 'DELETE',
+      headers: getAuthHeaders(token),
+    });
+    return res.json();
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al eliminar cuenta'
+    };
+  }
 }
 
 /**

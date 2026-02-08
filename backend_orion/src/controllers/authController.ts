@@ -32,7 +32,7 @@ export class AuthController {
   async forgotPassword(req: Request, res: Response) {
     try {
       const { email } = req.body;
-      console.log('Recibida petición de recuperación para:', email); 
+      console.log('Recibida petición de recuperación para:', email);
       if (!email) {
         return res.status(400).json({
           success: false,
@@ -98,6 +98,29 @@ export class AuthController {
       res.json({
         success: true,
         data: req.user
+      });
+    } catch (error: unknown) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  async deleteAccount(req: Request, res: Response) {
+    try {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({
+          success: false,
+          error: 'Unauthorized'
+        });
+      }
+
+      await authService.deleteAccount(req.user.id);
+
+      res.json({
+        success: true,
+        message: 'Account deleted successfully'
       });
     } catch (error: unknown) {
       res.status(500).json({

@@ -6,14 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/components/theme/ThemeProvider';
-import { 
-  Sun, 
-  Moon, 
-  Monitor, 
-  Bell, 
-  Globe, 
-  Palette, 
-  Shield, 
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Bell,
+  Globe,
+  Palette,
+  Shield,
   Download,
   Trash2,
   User,
@@ -22,6 +22,21 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth'; // Asumiendo que existe un hook useAuth
+import { deleteAccount } from '@/services/orionApi';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -29,6 +44,42 @@ export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [language, setLanguage] = useState('es');
+
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  // Intentar obtener el token del localStorage si no tenemos un hook de auth accesible directamente aquí
+  const token = localStorage.getItem('token');
+
+  const handleDeleteAccount = async () => {
+    if (!token) return;
+
+    try {
+      const result = await deleteAccount(token);
+
+      if (result.success) {
+        toast({
+          title: "Cuenta eliminada",
+          description: "Tu cuenta ha sido eliminada permanentemente.",
+        });
+        // Limpiar almacenamiento local
+        localStorage.clear();
+        // Redirigir al login
+        navigate('/login');
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "No se pudo eliminar la cuenta.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const themeOptions = [
     { value: 'light', label: 'Claro', icon: Sun },
@@ -68,8 +119,8 @@ export default function Settings() {
                         onClick={() => setTheme(option.value as 'light' | 'dark' | 'system')}
                         className={cn(
                           "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-                          theme === option.value 
-                            ? "border-primary bg-primary/5 shadow-sm" 
+                          theme === option.value
+                            ? "border-primary bg-primary/5 shadow-sm"
                             : "border-border hover:border-primary/50 hover:bg-accent/50"
                         )}
                       >
@@ -238,7 +289,26 @@ export default function Settings() {
                     <p className="text-sm text-muted-foreground">Esta acción es irreversible</p>
                   </div>
                 </div>
-                <Button variant="destructive" size="sm">Eliminar</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">Eliminar</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Esto eliminará permanentemente tu cuenta
+                        y removerá todos tus datos de nuestros servidores.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Sí, eliminar cuenta
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>

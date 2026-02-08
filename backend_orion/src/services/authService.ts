@@ -2,7 +2,7 @@ import { prisma } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { EmailService } from './emailService.js';
-import { resetPasswordEmailTemplate } from '../utils/email_templates.js';
+import { resetPasswordEmailTemplate, welcomeEmailTemplate } from '../utils/email_templates.js';
 
 interface RegisterData {
   email: string;
@@ -33,9 +33,10 @@ export class AuthService {
   }
 
   async register(data: RegisterData) {
+    const email = data.email.toLowerCase();
     // Verificar si el usuario ya existe
     const existingUser = await prisma.user.findUnique({
-      where: { email: data.email }
+      where: { email }
     });
 
     if (existingUser) {
@@ -48,7 +49,7 @@ export class AuthService {
     // Crear usuario con perfil
     const user = await prisma.user.create({
       data: {
-        email: data.email,
+        email,
         password: hashedPassword,
         profile: {
           create: {
@@ -70,6 +71,28 @@ export class AuthService {
     // Generar token
     const token = this.generateToken(user.id, user.email);
 
+    console.log('Preparing to send welcome email...');
+    try {
+      // Enviar correo de bienvenida (Async - no bloqueamos la respuesta si falla)
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+      const dashboardUrl = `${frontendUrl}/dashboard`;
+
+      // Usar nombre del perfil o extraer del email
+      const userName = data.fullName
+        ? data.fullName.split(' ')[0]
+        : this.getUserNameFromEmail(email);
+
+      console.log(`Generating welcome email for ${userName} (${user.email})`);
+      const welcomeHtml = welcomeEmailTemplate(userName, dashboardUrl);
+
+      console.log('Calling emailService.sendWelcomeEmail...');
+      this.emailService.sendWelcomeEmail(user.email, welcomeHtml)
+        .then(() => console.log('Welcome email promise resolved'))
+        .catch(err => console.error('Error sending welcome email inside promise:', err));
+    } catch (err) {
+      console.error('Error preparing welcome email:', err);
+    }
+
     return {
       user: {
         id: user.id,
@@ -82,9 +105,10 @@ export class AuthService {
   }
 
   async login(data: LoginData) {
+    const email = data.email.toLowerCase();
     // Buscar usuario
     const user = await prisma.user.findUnique({
-      where: { email: data.email },
+      where: { email },
       include: {
         profile: true,
         userRoles: true
@@ -139,7 +163,7 @@ export class AuthService {
   async verifyToken(token: string) {
     try {
       const secret = process.env.JWT_SECRET;
-      
+
       if (!secret) {
         throw new Error('JWT_SECRET is not defined');
       }
@@ -177,7 +201,7 @@ export class AuthService {
 
     const emailParts = email.split('@');
     const localPart = emailParts[0];
-    
+
     // Validar que la parte local existe y no está vacía
     if (!localPart || localPart.length === 0) {
       return 'Usuario';
@@ -186,7 +210,7 @@ export class AuthService {
     // Dividir por puntos, guiones o guiones bajos y tomar la primera parte
     const nameParts = localPart.split(/[._-]/);
     const namePart = nameParts[0];
-    
+
     // Validar que la parte del nombre existe y no está vacía
     if (!namePart || namePart.length === 0) {
       return 'Usuario';
@@ -194,17 +218,18 @@ export class AuthService {
 
     // Capitalizar primera letra
     const capitalizedName = namePart.charAt(0).toUpperCase() + namePart.slice(1).toLowerCase();
-    
+
     // Validar que el nombre parece válido (más de 2 caracteres y no contiene números)
     if (capitalizedName.length > 2 && !/\d/.test(capitalizedName)) {
       return capitalizedName;
     }
-    
+
     // Fallback genérico
     return 'Usuario';
   }
 
-  async requestPasswordReset(email: string) {
+  async requestPasswordReset(emailInput: string) {
+    const email = emailInput.toLowerCase();
     const user = await prisma.user.findUnique({
       where: { email },
       include: { profile: true }
@@ -233,13 +258,13 @@ export class AuthService {
 
     // Obtener nombre del usuario con validaciones de seguridad
     let userName = 'Usuario';
-    
+
     if (user.profile?.fullName) {
       const fullNameTrimmed = user.profile.fullName.trim();
-      
+
       if (fullNameTrimmed.length > 0) {
         const firstName = fullNameTrimmed.split(' ')[0];
-        
+
         if (firstName && firstName.length > 0) {
           userName = firstName;
         } else {
@@ -259,17 +284,17 @@ export class AuthService {
     try {
       console.log('Enviando email de recuperación a:', user.email);
       console.log('Nombre del usuario:', userName);
-      
+
       // Generar HTML directamente en el backend
       const htmlContent = resetPasswordEmailTemplate(resetUrl, userName);
-      
+
       // Enviar email
       await this.emailService.sendPasswordResetEmail(user.email, resetToken, htmlContent);
       console.log('Email de recuperación enviado exitosamente');
-      
+
     } catch (error) {
       console.error('Error sending reset email:', error);
-      
+
       // Limpiar token si falla el envío
       await prisma.user.update({
         where: { id: user.id },
@@ -278,13 +303,13 @@ export class AuthService {
           resetTokenExpiry: null
         }
       });
-      
+
       // Lanzar el error para que el controller lo maneje
       throw new Error('Error enviando email de recuperación');
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Si el correo existe, recibirás un enlace de recuperación'
     };
   }
@@ -292,7 +317,7 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as PasswordResetPayload;
-      
+
       const user = await prisma.user.findFirst({
         where: {
           id: decoded.userId,
@@ -319,6 +344,25 @@ export class AuthService {
       return { success: true, message: 'Password updated successfully' };
     } catch (error) {
       throw new Error('Invalid or expired reset token');
+    }
+  }
+  async deleteAccount(userId: string) {
+    try {
+      // Eliminar datos relacionados (cascade debería manejar la mayoría, pero por seguridad)
+      // Primero eliminamos la sesión/token si existiera en alguna tabla (no aplica aquí con JWT stateless)
+
+      // Eliminar el usuario (Prisma se encarga de los perfiles y roles por la relación onDelete: Cascade si está configurada,
+      // si no, deberíamos borrar manualmente. Asumiremos que schema.prisma está bien configurado o borraremos en orden)
+
+      // Intentamos borrar el usuario directamente
+      await prisma.user.delete({
+        where: { id: userId }
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error('Could not delete account');
     }
   }
 }

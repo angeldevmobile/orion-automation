@@ -1,0 +1,137 @@
+import { Prisma } from '@prisma/client';
+// Custom error class for throwing specific errors
+export class ApiError extends Error {
+    statusCode;
+    code;
+    constructor(statusCode, message, code) {
+        super(message);
+        this.statusCode = statusCode;
+        this.code = code;
+        Error.captureStackTrace(this, this.constructor);
+    }
+}
+export const errorHandler = (err, req, res, next) => {
+    console.error('Error:', err);
+    // Multer - archivo demasiado grande
+    if (err.message?.includes('File too large')) {
+        return res.status(413).json({
+            success: false,
+            error: 'Archivo demasiado grande (máx 100MB)',
+            code: 'FILE_TOO_LARGE'
+        });
+    }
+    // Multer - tipo de archivo no permitido
+    if (err.message?.includes('Tipo de archivo no permitido')) {
+        return res.status(400).json({
+            success: false,
+            error: 'Tipo de archivo no permitido',
+            code: 'INVALID_FILE_TYPE'
+        });
+    }
+    // Rate limit de APIs externas (Claude/OpenAI)
+    if (err.message?.includes('429') || err.message?.includes('rate_limit')) {
+        return res.status(429).json({
+            success: false,
+            error: 'Límite de API externa alcanzado. Intente en unos minutos.',
+            code: 'EXTERNAL_RATE_LIMIT'
+        });
+    }
+    // CORS
+    if (err.message?.includes('Not allowed by CORS')) {
+        return res.status(403).json({
+            success: false,
+            error: 'Origen no permitido por CORS',
+            code: 'CORS_ERROR'
+        });
+    }
+    // Prisma errors
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        // Unique constraint violation
+        if (err.code === 'P2002') {
+            return res.status(409).json({
+                success: false,
+                error: 'A record with this data already exists',
+                code: err.code
+            });
+        }
+        // Record not found
+        if (err.code === 'P2025') {
+            return res.status(404).json({
+                success: false,
+                error: 'Record not found',
+                code: err.code
+            });
+        }
+        // Foreign key constraint failed
+        if (err.code === 'P2003') {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid reference to related data',
+                code: err.code
+            });
+        }
+        // Record required but not found
+        if (err.code === 'P2015') {
+            return res.status(404).json({
+                success: false,
+                error: 'Related record not found',
+                code: err.code
+            });
+        }
+    }
+    // Prisma validation errors
+    if (err instanceof Prisma.PrismaClientValidationError) {
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid data provided',
+            details: err.message
+        });
+    }
+    // Prisma initialization errors
+    if (err instanceof Prisma.PrismaClientInitializationError) {
+        return res.status(503).json({
+            success: false,
+            error: 'Database connection error',
+            code: err.errorCode
+        });
+    }
+    // Custom API errors
+    if (err instanceof ApiError) {
+        return res.status(err.statusCode).json({
+            success: false,
+            error: err.message,
+            ...(err.code && { code: err.code }),
+            ...(process.env.NODE_ENV === 'development' && {
+                stack: err.stack
+            })
+        });
+    }
+    // Default error
+    res.status(500).json({
+        success: false,
+        error: err.message || 'Internal server error',
+        ...(process.env.NODE_ENV === 'development' && {
+            stack: err.stack
+        })
+    });
+};
+// Helper functions to throw common errors
+export const notFound = (resource = 'Resource') => {
+    return new ApiError(404, `${resource} not found`);
+};
+export const unauthorized = (message = 'Unauthorized') => {
+    return new ApiError(401, message);
+};
+export const forbidden = (message = 'Forbidden') => {
+    return new ApiError(403, message);
+};
+export const badRequest = (message = 'Bad request') => {
+    return new ApiError(400, message);
+};
+export const conflict = (message = 'Resource already exists') => {
+    return new ApiError(409, message);
+};
+export const serverError = (message = 'Internal server error') => {
+    return new ApiError(500, message);
+};
+//# sourceMappingURL=error.middleware.js.map

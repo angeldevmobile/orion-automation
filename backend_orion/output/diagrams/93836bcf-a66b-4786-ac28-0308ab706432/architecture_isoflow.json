@@ -1,0 +1,219 @@
+{
+  "name": "federico-bot Architecture",
+  "description": "Isometric architecture diagram for Node.js microservice bot",
+  "groups": [
+    {
+      "id": "external",
+      "label": "External Layer",
+      "style": {
+        "color": "#e3f2fd",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "frontend",
+      "label": "Frontend",
+      "style": {
+        "color": "#e8eaf6",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "backend",
+      "label": "Backend Services",
+      "style": {
+        "color": "#f3e5f5",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "data",
+      "label": "Data Layer",
+      "style": {
+        "color": "#e8f5e9",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "infra",
+      "label": "Infrastructure",
+      "style": {
+        "color": "#fff3e0",
+        "opacity": 0.3
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "users",
+      "type": "person",
+      "label": "Bot Users",
+      "description": "End users interacting with Federico bot",
+      "group": "external",
+      "icon": "person",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "color": "#1976d2"
+      }
+    },
+    {
+      "id": "bot_interface",
+      "type": "browser",
+      "label": "Bot Interface",
+      "description": "Chat or messaging interface",
+      "group": "frontend",
+      "icon": "browser",
+      "position": {
+        "x": 1,
+        "y": 0
+      },
+      "style": {
+        "color": "#5e35b1"
+      }
+    },
+    {
+      "id": "express_api",
+      "type": "server",
+      "label": "Express.js API",
+      "description": "Node.js REST API server",
+      "group": "backend",
+      "icon": "server",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "style": {
+        "color": "#7b1fa2"
+      }
+    },
+    {
+      "id": "auth_service",
+      "type": "microservice",
+      "label": "Auth Service",
+      "description": "Authentication microservice",
+      "group": "backend",
+      "icon": "lock",
+      "position": {
+        "x": 2,
+        "y": 1
+      },
+      "style": {
+        "color": "#d32f2f"
+      }
+    },
+    {
+      "id": "bot_logic",
+      "type": "microservice",
+      "label": "Bot Logic",
+      "description": "Federico bot processing service",
+      "group": "backend",
+      "icon": "microservice",
+      "position": {
+        "x": 3,
+        "y": 0
+      },
+      "style": {
+        "color": "#f57c00"
+      }
+    },
+    {
+      "id": "prisma_orm",
+      "type": "server",
+      "label": "Prisma ORM",
+      "description": "Database abstraction layer",
+      "group": "backend",
+      "icon": "server",
+      "position": {
+        "x": 3,
+        "y": 1
+      },
+      "style": {
+        "color": "#388e3c"
+      }
+    },
+    {
+      "id": "database",
+      "type": "database",
+      "label": "Database",
+      "description": "Primary data storage",
+      "group": "data",
+      "icon": "database",
+      "position": {
+        "x": 4,
+        "y": 0
+      },
+      "style": {
+        "color": "#2e7d32"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "users",
+      "to": "bot_interface",
+      "label": "User Interactions",
+      "style": {
+        "color": "#1976d2",
+        "animated": true
+      }
+    },
+    {
+      "from": "bot_interface",
+      "to": "express_api",
+      "label": "HTTPS Requests",
+      "style": {
+        "color": "#5e35b1",
+        "animated": true
+      }
+    },
+    {
+      "from": "express_api",
+      "to": "auth_service",
+      "label": "Auth Validation",
+      "style": {
+        "color": "#d32f2f"
+      }
+    },
+    {
+      "from": "express_api",
+      "to": "bot_logic",
+      "label": "Bot Commands",
+      "style": {
+        "color": "#f57c00",
+        "animated": true
+      }
+    },
+    {
+      "from": "bot_logic",
+      "to": "prisma_orm",
+      "label": "Data Operations",
+      "style": {
+        "color": "#388e3c"
+      }
+    },
+    {
+      "from": "prisma_orm",
+      "to": "database",
+      "label": "SQL Queries",
+      "style": {
+        "color": "#2e7d32"
+      }
+    },
+    {
+      "from": "auth_service",
+      "to": "database",
+      "label": "User Data",
+      "style": {
+        "color": "#d32f2f"
+      }
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2026-02-07T20:10:16.886Z",
+    "projectType": "code",
+    "version": "1.0.0"
+  }
+}

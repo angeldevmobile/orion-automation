@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,57 +35,58 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/pricing" element={<Pricing />} />
-            
+            <Route path="/reset-password" element={<ResetPassword />} />
+
             {/* Rutas protegidas */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/new-project" 
+            <Route
+              path="/new-project"
               element={
                 <ProtectedRoute>
                   <NewProject />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/project/:id" 
+            <Route
+              path="/project/:id"
               element={
                 <ProtectedRoute>
                   <ProjectWorkspace />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/project/:id/settings" 
+            <Route
+              path="/project/:id/settings"
               element={
                 <ProtectedRoute>
                   <ProjectSettings />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/chat" 
+            <Route
+              path="/chat"
               element={
                 <ProtectedRoute>
                   <Chat />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/settings" 
+            <Route
+              path="/settings"
               element={
                 <ProtectedRoute>
                   <Settings />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

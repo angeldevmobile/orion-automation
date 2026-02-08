@@ -1,0 +1,194 @@
+{
+  "name": "federico-bot Architecture",
+  "description": "Isometric architecture diagram for TypeScript React bot application",
+  "groups": [
+    {
+      "id": "external",
+      "label": "External Layer",
+      "style": {
+        "color": "#e3f2fd",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "frontend",
+      "label": "Frontend",
+      "style": {
+        "color": "#e8eaf6",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "backend",
+      "label": "Backend Services",
+      "style": {
+        "color": "#f3e5f5",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "data",
+      "label": "Data Layer",
+      "style": {
+        "color": "#e8f5e9",
+        "opacity": 0.3
+      }
+    },
+    {
+      "id": "infra",
+      "label": "Infrastructure",
+      "style": {
+        "color": "#fff3e0",
+        "opacity": 0.3
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "users",
+      "type": "person",
+      "label": "Bot Users",
+      "description": "End users interacting with Federico Bot",
+      "group": "external",
+      "icon": "person",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "style": {
+        "color": "#1976d2"
+      }
+    },
+    {
+      "id": "react_frontend",
+      "type": "browser",
+      "label": "React Frontend",
+      "description": "TypeScript React UI with custom hooks",
+      "group": "frontend",
+      "icon": "browser",
+      "position": {
+        "x": 1,
+        "y": 0
+      },
+      "style": {
+        "color": "#673ab7"
+      }
+    },
+    {
+      "id": "nodejs_backend",
+      "type": "server",
+      "label": "Node.js Backend",
+      "description": "TypeScript Node.js bot service",
+      "group": "backend",
+      "icon": "server",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "style": {
+        "color": "#7b1fa2"
+      }
+    },
+    {
+      "id": "bot_engine",
+      "type": "microservice",
+      "label": "Bot Engine",
+      "description": "Core bot logic and conversation handling",
+      "group": "backend",
+      "icon": "microservice",
+      "position": {
+        "x": 2,
+        "y": 1
+      },
+      "style": {
+        "color": "#8e24aa"
+      }
+    },
+    {
+      "id": "external_api",
+      "type": "cloud",
+      "label": "External APIs",
+      "description": "Third-party services integration",
+      "group": "external",
+      "icon": "cloud",
+      "position": {
+        "x": 3,
+        "y": 0
+      },
+      "style": {
+        "color": "#1976d2"
+      }
+    },
+    {
+      "id": "local_storage",
+      "type": "storage",
+      "label": "Local Storage",
+      "description": "Bot state and conversation data",
+      "group": "data",
+      "icon": "storage",
+      "position": {
+        "x": 3,
+        "y": 1
+      },
+      "style": {
+        "color": "#388e3c"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "users",
+      "to": "react_frontend",
+      "label": "User Interactions",
+      "style": {
+        "color": "#1976d2",
+        "animated": true
+      }
+    },
+    {
+      "from": "react_frontend",
+      "to": "nodejs_backend",
+      "label": "API Requests",
+      "style": {
+        "color": "#673ab7"
+      }
+    },
+    {
+      "from": "nodejs_backend",
+      "to": "bot_engine",
+      "label": "Bot Commands",
+      "style": {
+        "color": "#7b1fa2"
+      }
+    },
+    {
+      "from": "bot_engine",
+      "to": "external_api",
+      "label": "Service Calls",
+      "style": {
+        "color": "#8e24aa"
+      }
+    },
+    {
+      "from": "bot_engine",
+      "to": "local_storage",
+      "label": "Data Persistence",
+      "style": {
+        "color": "#388e3c"
+      }
+    },
+    {
+      "from": "nodejs_backend",
+      "to": "react_frontend",
+      "label": "Bot Responses",
+      "style": {
+        "color": "#7b1fa2"
+      }
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2026-02-07T20:08:18.855Z",
+    "projectType": "code",
+    "version": "1.0.0"
+  }
+}

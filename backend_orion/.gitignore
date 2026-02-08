@@ -23,8 +23,11 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# TypeScript compiled output (paths relative to this folder!)
+# TypeScript compiled output (should not be in repo)
 src/**/*.js
 src/**/*.js.map
 src/**/*.d.ts
 src/**/*.d.ts.map
+
+# But KEEP custom type declarations
+!src/types/**/*.d.ts

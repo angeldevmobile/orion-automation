@@ -7,10 +7,21 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies
+node_modules/
+
+# TypeScript compiled output
+backend_orion/src/**/*.js
+backend_orion/src/**/*.js.map
+backend_orion/src/**/*.d.ts
+backend_orion/src/**/*.d.ts.map
+
+# Environment variables
+.env
+.env.local
+
+# Output files
+backend_orion/output/
 
 # Editor directories and files
 .vscode/*

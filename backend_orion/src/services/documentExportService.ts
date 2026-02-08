@@ -3,6 +3,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { marked } from 'marked';
 import { AdvancedDiagramService } from './advancedDiagramService.js';
+import type { IsoflowModel } from './diagramService.js';
 
 // Branding centralizado
 const ORION_BRAND = 'Orion AI';
@@ -204,12 +205,79 @@ export class DocumentExportService {
       }
     }
 
-    // Procesar bloques D2 embebidos en el markdown
+    // ═══════════════════════════════════════════════════════════════
+    // Procesar bloques Isoflow embebidos (JSON del modelo isométrico)
+    // ═══════════════════════════════════════════════════════════════
+    const isoflowBlocks = markdown.match(/```isoflow\n[\s\S]*?\n```/g) || [];
+    for (const block of isoflowBlocks) {
+      diagramIndex++;
+      const isoflowJson = block.replace(/```isoflow\n/, '').replace(/\n```$/, '');
+      const imagePath = path.join(outputDir, `${baseName}_isoflow_${diagramIndex}.png`);
+
+      try {
+        const model: IsoflowModel = JSON.parse(isoflowJson);
+        await this.advancedDiagram.generateIsoflowImage(model, imagePath, {
+          width: 1920,
+          height: 1080,
+          format: 'png',
+        });
+        markdown = markdown.replace(
+          block,
+          `\n<div class="diagram-container">\n<img src="${imagePath}" alt="Diagrama Isométrico ${diagramIndex}" />\n<p class="diagram-caption">Figura ${diagramIndex}: Vista isométrica de arquitectura</p>\n</div>\n`
+        );
+      } catch (error) {
+        console.error(`Error generando diagrama Isoflow ${diagramIndex}:`, error);
+
+        // Fallback: intentar convertir a Mermaid
+        try {
+          const model: IsoflowModel = JSON.parse(isoflowJson);
+          const mermaidFallback = this.advancedDiagram.isoflowToMermaid(model);
+          const fallbackPath = path.join(outputDir, `${baseName}_isoflow_fallback_${diagramIndex}.png`);
+          await this.advancedDiagram.generateMermaidImage(mermaidFallback, fallbackPath, 'png');
+          markdown = markdown.replace(
+            block,
+            `\n<div class="diagram-container">\n<img src="${fallbackPath}" alt="Diagrama ${diagramIndex}" />\n<p class="diagram-caption">Figura ${diagramIndex}: Diagrama de arquitectura (vista simplificada)</p>\n</div>\n`
+          );
+        } catch (fallbackError) {
+          console.error(`Error en fallback Mermaid para Isoflow ${diagramIndex}:`, fallbackError);
+          markdown = markdown.replace(
+            block,
+            `\n<div class="diagram-fallback"><p><em>Diagrama ${diagramIndex} - No se pudo renderizar el diagrama isométrico. Codigo fuente disponible en el repositorio.</em></p></div>\n`
+          );
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Procesar bloques D2 → Convertir a Mermaid (D2 no soportado 
+    // correctamente en Kroki para el contenido generado por IA)
+    // ═══════════════════════════════════════════════════════════════
     const d2Blocks = markdown.match(/```d2\n[\s\S]*?\n```/g) || [];
     for (const block of d2Blocks) {
       diagramIndex++;
       const d2Code = block.replace(/```d2\n/, '').replace(/\n```$/, '');
       const imagePath = path.join(outputDir, `${baseName}_d2_${diagramIndex}.png`);
+
+      try {
+        // Intentar parsear como modelo Isoflow (la IA a veces genera JSON con etiqueta d2)
+        const parsed = JSON.parse(d2Code);
+        if (parsed.nodes && parsed.edges) {
+          // Es un modelo Isoflow disfrazado de D2 → renderizar como isométrico
+          console.log(`Bloque D2 ${diagramIndex} detectado como modelo Isoflow, renderizando como isométrico...`);
+          await this.advancedDiagram.generateIsoflowImage(parsed as IsoflowModel, imagePath, {
+            width: 1920,
+            height: 1080,
+            format: 'png',
+          });
+          markdown = markdown.replace(
+            block,
+            `\n<div class="diagram-container">\n<img src="${imagePath}" alt="Diagrama Isométrico ${diagramIndex}" />\n<p class="diagram-caption">Figura ${diagramIndex}: Vista isométrica de arquitectura</p>\n</div>\n`
+          );
+          continue;
+        }
+      } catch {
+        // No es JSON, es código D2 real → intentar con Kroki
+      }
 
       try {
         await this.advancedDiagram.generateD2Diagram(d2Code, imagePath, 'png');
@@ -219,10 +287,24 @@ export class DocumentExportService {
         );
       } catch (error) {
         console.error(`Error generando diagrama D2 ${diagramIndex}:`, error);
-        markdown = markdown.replace(
-          block,
-          `\n<div class="diagram-fallback"><p><em>Diagrama ${diagramIndex} - No se pudo renderizar la imagen D2. Codigo fuente disponible en el repositorio.</em></p></div>\n`
-        );
+
+        // Fallback: convertir D2 a Mermaid básico
+        try {
+          console.log(`Intentando fallback: D2 → Mermaid para diagrama ${diagramIndex}...`);
+          const mermaidCode = this.d2ToMermaidFallback(d2Code);
+          const fallbackPath = path.join(outputDir, `${baseName}_d2_fallback_${diagramIndex}.png`);
+          await this.advancedDiagram.generateMermaidImage(mermaidCode, fallbackPath, 'png');
+          markdown = markdown.replace(
+            block,
+            `\n<div class="diagram-container">\n<img src="${fallbackPath}" alt="Diagrama ${diagramIndex}" />\n<p class="diagram-caption">Figura ${diagramIndex}: Diagrama de arquitectura (vista alternativa)</p>\n</div>\n`
+          );
+        } catch (fallbackError) {
+          console.error(`Error en fallback D2→Mermaid ${diagramIndex}:`, fallbackError);
+          markdown = markdown.replace(
+            block,
+            `\n<div class="diagram-fallback"><p><em>Diagrama ${diagramIndex} - No se pudo renderizar la imagen D2. Codigo fuente disponible en el repositorio.</em></p></div>\n`
+          );
+        }
       }
     }
 
@@ -242,14 +324,101 @@ export class DocumentExportService {
       diagramIndex++;
       const imagePath = path.join(outputDir, `${baseName}_d2_opt.png`);
       try {
-        await this.advancedDiagram.generateD2Diagram(options.d2Code, imagePath, 'png');
-        markdown += `\n\n<div class="diagram-container">\n<img src="${imagePath}" alt="Diagrama D2 Profesional" />\n<p class="diagram-caption">Vista de Arquitectura Profesional</p>\n</div>\n`;
-      } catch (error) {
-        console.error('Error generando diagrama D2 desde opciones:', error);
+        // Intentar como Isoflow primero
+        const parsed = JSON.parse(options.d2Code);
+        if (parsed.nodes && parsed.edges) {
+          await this.advancedDiagram.generateIsoflowImage(parsed as IsoflowModel, imagePath, {
+            width: 1920,
+            height: 1080,
+            format: 'png',
+          });
+        } else {
+          await this.advancedDiagram.generateD2Diagram(options.d2Code, imagePath, 'png');
+        }
+        markdown += `\n\n<div class="diagram-container">\n<img src="${imagePath}" alt="Diagrama Profesional" />\n<p class="diagram-caption">Vista de Arquitectura Profesional</p>\n</div>\n`;
+      } catch {
+        try {
+          await this.advancedDiagram.generateD2Diagram(options.d2Code, imagePath, 'png');
+          markdown += `\n\n<div class="diagram-container">\n<img src="${imagePath}" alt="Diagrama D2 Profesional" />\n<p class="diagram-caption">Vista de Arquitectura Profesional</p>\n</div>\n`;
+        } catch (error) {
+          console.error('Error generando diagrama D2 desde opciones:', error);
+        }
       }
     }
 
     return markdown;
+  }
+
+  /**
+   * Convierte código D2 básico a Mermaid como fallback
+   * Parsea la sintaxis D2 común: `a -> b: label`
+   */
+  private d2ToMermaidFallback(d2Code: string): string {
+    const lines = d2Code.split('\n').filter(l => l.trim());
+    let mermaid = 'graph TB\n';
+
+    const nodeLabels = new Map<string, string>();
+    const edges: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Ignorar comentarios y líneas de estilo D2
+      if (trimmed.startsWith('#') || trimmed.startsWith('//') || trimmed.includes('.style.')) {
+        continue;
+      }
+
+      // Detectar conexiones: a -> b: label  o  a -- b: label
+      const edgeMatch = trimmed.match(/^([\w.-]+)\s*(->|--|<->)\s*([\w.-]+)(?:\s*:\s*(.+))?$/);
+      if (edgeMatch) {
+        const from = edgeMatch[1];
+        const arrowType = edgeMatch[2];
+        const to = edgeMatch[3];
+        const label = edgeMatch[4];
+
+        if (from && arrowType && to) {
+          const fromId = from.replace(/[.-]/g, '_');
+          const toId = to.replace(/[.-]/g, '_');
+
+          if (!nodeLabels.has(fromId)) nodeLabels.set(fromId, from);
+          if (!nodeLabels.has(toId)) nodeLabels.set(toId, to);
+
+          const arrow = arrowType === '--' ? '---' : '-->';
+          const labelStr = label ? `|${label.trim()}|` : '';
+          edges.push(`    ${fromId} ${arrow}${labelStr} ${toId}`);
+        }
+        continue;
+      }
+
+      // Detectar definiciones de nodo: a: "Label"
+      const nodeMatch = trimmed.match(/^([\w.-]+)\s*:\s*"?([^"{}]+)"?\s*(?:\{|$)/);
+      if (nodeMatch) {
+        const id = nodeMatch[1];
+        const label = nodeMatch[2];
+
+        if (id && label) {
+          const nodeId = id.replace(/[.-]/g, '_');
+          nodeLabels.set(nodeId, label.trim());
+        }
+      }
+    }
+
+    // Generar nodos
+    for (const [id, label] of nodeLabels) {
+      mermaid += `    ${id}["${label}"]\n`;
+    }
+
+    // Generar edges
+    for (const edge of edges) {
+      mermaid += edge + '\n';
+    }
+
+    // Si no se generó nada útil, devolver diagrama mínimo
+    if (nodeLabels.size === 0) {
+      mermaid = 'graph TB\n    A["Diagrama no disponible"]\n';
+    }
+
+    return mermaid;
   }
 
   /**

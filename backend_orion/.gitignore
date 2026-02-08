@@ -13,6 +13,7 @@ uploads/
 
 # Output files
 output/
+dist/
 
 # Logs
 logs

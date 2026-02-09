@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { MarkdownMessage } from './markdownMessage';
 import { FileAttachment, type AttachedFile } from './FileAttachment';
+import { StorageDisk } from './StorageDisk';
+import { StorageManager } from './StorageManager';
+import { StorageFullBanner } from './StorageFullBanner';
+import { useChatStorage } from '@/hooks/storageHistory';
 import { API_CONFIG, getApiUrl, getAuthHeaders, getAuthHeadersForUpload } from '@/config/apiConfig';
 
 interface Message {
@@ -68,6 +72,18 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const {
+    storageInfo,
+    conversations: storageConversations,
+    isLoading: isLoadingStorage,
+    showStorageManager,
+    setShowStorageManager,
+    fetchStorageData,
+    deleteConversation,
+    deleteMultipleConversations,
+    canCreateConversation,
+  } = useChatStorage();
+
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
@@ -106,12 +122,10 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
     }
   }, [toast]);
 
-  // ✅ Sincronizar conversationId del prop con el estado interno
   useEffect(() => {
     if (conversationId && conversationId !== currentConversationId) {
       loadConversation(conversationId);
     } else if (!conversationId && currentConversationId && conversationId !== undefined) {
-      // Solo resetear si conversationId cambió explícitamente a null
       setMessages(initialMessages);
       setCurrentConversationId(null);
     }
@@ -121,7 +135,6 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
     const files = Array.from(e.target.files || []);
     
     files.forEach((file) => {
-      // Validar tamaño
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: 'Archivo demasiado grande',
@@ -131,7 +144,6 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
         return;
       }
 
-      // Validar tipo
       if (!ALLOWED_FILE_TYPES.includes(file.type)) {
         toast({
           title: 'Tipo de archivo no permitido',
@@ -156,7 +168,6 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
         type: fileType,
       };
 
-      // Crear preview para imágenes
       if (fileType === 'image') {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -169,7 +180,6 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
       }
     });
 
-    // Resetear input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -181,6 +191,16 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
 
   const handleSend = async () => {
     if ((!input.trim() && attachedFiles.length === 0) || isLoading) return;
+
+    if (!currentConversationId && !canCreateConversation()) {
+      toast({
+        title: 'Almacenamiento lleno',
+        description: 'Has alcanzado el límite de conversaciones. Elimina algunas para continuar.',
+        variant: 'destructive',
+      });
+      setShowStorageManager(true);
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -204,7 +224,6 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
         ? API_CONFIG.endpoints.conversationSendMessage(currentConversationId)
         : API_CONFIG.endpoints.sendMessage;
 
-      // Crear FormData para enviar archivos
       const formData = new FormData();
       formData.append('message', messageContent);
       
@@ -231,6 +250,8 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
       if (!currentConversationId && result.data.conversationId) {
         setCurrentConversationId(result.data.conversationId);
         onConversationCreated?.(result.data.conversationId);
+        // Refrescar datos de almacenamiento
+        fetchStorageData();
       }
 
       const aiMessage: Message = {
@@ -274,16 +295,30 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
     <div className="flex flex-col h-full bg-background">
       {/* Chat Header */}
       <div className="p-4 border-b border-border bg-card">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Sparkles className="h-5 w-5 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold">Chat con Orion AI</h2>
+              <p className="text-xs text-muted-foreground">Tu asistente de desarrollo y automatización</p>
+            </div>
           </div>
-          <div>
-            <h2 className="font-semibold">Chat con Orion AI</h2>
-            <p className="text-xs text-muted-foreground">Tu asistente de desarrollo y automatización</p>
-          </div>
+          {/* Indicador de disco compacto en el header */}
+          <StorageDisk
+            storageInfo={storageInfo}
+            onClick={() => setShowStorageManager(true)}
+            compact
+          />
         </div>
       </div>
+
+      {/* Banner de almacenamiento lleno/casi lleno */}
+      <StorageFullBanner
+        storageInfo={storageInfo}
+        onManageStorage={() => setShowStorageManager(true)}
+      />
 
       {/* Messages */}
       <div className="flex-1 overflow-hidden">
@@ -318,7 +353,7 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
                   {message.attachments && message.attachments.length > 0 && (
                     <FileAttachment 
                       files={message.attachments} 
-                      onRemove={() => {}} // Read-only en mensajes enviados
+                      onRemove={() => {}}
                     />
                   )}
                   {message.role === 'assistant' ? (
@@ -375,10 +410,9 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
         </div>
       )}
 
-      {/* Input Area - Fixed at bottom */}
+      {/* Input Area */}
       <div className="p-4 border-t border-border bg-card shrink-0">
         <div className="max-w-7xl mx-auto">
-          {/* File Attachments Preview */}
           {attachedFiles.length > 0 && (
             <FileAttachment files={attachedFiles} onRemove={handleRemoveFile} />
           )}
@@ -406,13 +440,16 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Escribe tu mensaje..."
+              placeholder={storageInfo.isFull && !currentConversationId 
+                ? "Almacenamiento lleno — libera espacio primero" 
+                : "Escribe tu mensaje..."
+              }
               className="flex-1 rounded-full px-4 py-5 bg-background border-border focus-visible:ring-primary transition-all duration-200"
-              disabled={isLoading}
+              disabled={isLoading || (storageInfo.isFull && !currentConversationId)}
             />
             <Button
               onClick={handleSend}
-              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
+              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading || (storageInfo.isFull && !currentConversationId)}
               size="icon"
               className="h-10 w-10 rounded-full shrink-0 transition-all duration-200 hover:scale-105"
             >
@@ -424,6 +461,22 @@ export function ChatInterface({ conversationId, onConversationCreated }: ChatInt
           </p>
         </div>
       </div>
+
+      {/* ✅ Modal de gestión de almacenamiento */}
+      <StorageManager
+        open={showStorageManager}
+        onOpenChange={setShowStorageManager}
+        storageInfo={storageInfo}
+        conversations={storageConversations}
+        isLoading={isLoadingStorage}
+        onDelete={deleteConversation}
+        onDeleteMultiple={deleteMultipleConversations}
+        onRefresh={fetchStorageData}
+        onConversationSelect={(id) => {
+          loadConversation(id);
+        }}
+        activeConversationId={currentConversationId}
+      />
     </div>
   );
 }

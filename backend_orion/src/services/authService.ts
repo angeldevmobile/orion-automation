@@ -348,7 +348,7 @@ export class AuthService {
   }
   async deleteAccount(userId: string) {
     try {
-      // Eliminar datos relacionados (cascade debería manejar la mayoría, pero por seguridad)
+      // Eliminar datos relacionados (cascade maneja la mayoría, pero por seguridad)
       // Primero eliminamos la sesión/token si existiera en alguna tabla (no aplica aquí con JWT stateless)
 
       // Eliminar el usuario (Prisma se encarga de los perfiles y roles por la relación onDelete: Cascade si está configurada,

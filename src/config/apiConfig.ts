@@ -44,6 +44,10 @@ export const API_CONFIG = {
     sendMessage: '/api/conversations/send',
     conversationSendMessage: (id: string) => `/api/conversations/${id}/send`,
 
+    // Storage
+    storage: '/api/conversations/storage',
+    bulkDeleteConversations: '/api/conversations/bulk-delete',
+
     // Diagrams
     generateDiagrams: (id: string) => `/api/diagrams/project/${id}/generate`,
     projectDiagrams: (id: string) => `/api/diagrams/project/${id}`,

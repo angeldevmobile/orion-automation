@@ -114,9 +114,13 @@ export class ConversationsController {
         data: conversation
       });
     } catch (error: unknown) {
-      res.status(400).json({
+      // Si es error de cuota, devolver 429
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const status = message.includes('límite') ? 429 : 400;
+
+      res.status(status).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: message
       });
     }
   }
@@ -136,7 +140,6 @@ export class ConversationsController {
       const { message, projectId } = req.body;
       const files = req.files as Express.Multer.File[] | undefined;
 
-      // Validar que hay al menos mensaje o archivos
       if (!message?.trim() && (!files || files.length === 0)) {
         return res.status(400).json({
           success: false,
@@ -146,7 +149,6 @@ export class ConversationsController {
 
       let conversationIdToUse: string;
 
-      // Si no hay conversationId, crear una nueva conversación
       if (!conversationId) {
         const title = message?.slice(0, 50) || 'Conversación con archivos';
         const newConversation = await conversationsService.createConversation(userId, title, projectId);
@@ -155,7 +157,6 @@ export class ConversationsController {
         conversationIdToUse = conversationId;
       }
 
-      // Guardar mensaje del usuario con metadata de archivos si existen
       const userMessageMetadata = files && files.length > 0 ? {
         files: files.map(f => ({
           name: f.originalname,
@@ -172,16 +173,13 @@ export class ConversationsController {
         userMessageMetadata
       );
 
-      // Obtener conversación completa con mensajes y proyecto
       const conversationWithMessages = await conversationsService.getConversationById(
         conversationIdToUse,
         userId
       );
 
-      // Preparar mensajes para Claude
       const claudeMessages: ClaudeMessage[] = [];
 
-      // Convertir mensajes anteriores
       for (const msg of conversationWithMessages.messages.slice(0, -1)) {
         claudeMessages.push({
           role: msg.role as 'user' | 'assistant',
@@ -189,11 +187,9 @@ export class ConversationsController {
         });
       }
 
-      // Último mensaje (el actual) - puede tener archivos
       if (files && files.length > 0) {
         const contentParts: ContentBlock[] = [];
 
-        // Agregar texto si existe
         if (message?.trim()) {
           contentParts.push({
             type: 'text',
@@ -201,12 +197,9 @@ export class ConversationsController {
           });
         }
 
-        // Agregar imágenes
         for (const file of files) {
           if (file.mimetype.startsWith('image/')) {
             const base64Data = file.buffer.toString('base64');
-            
-            // Validar que sea un tipo soportado
             const mediaType = file.mimetype as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
             
             contentParts.push({
@@ -218,7 +211,6 @@ export class ConversationsController {
               }
             });
           } else if (file.mimetype.startsWith('text/') || file.mimetype === 'application/json') {
-            // Para archivos de texto, agregar su contenido
             const textContent = file.buffer.toString('utf-8');
             contentParts.push({
               type: 'text',
@@ -238,19 +230,16 @@ export class ConversationsController {
         });
       }
 
-      // Obtener contexto del proyecto si existe
       let projectContext: string | undefined;
       if (conversationWithMessages.projectId && conversationWithMessages.project) {
         projectContext = `Proyecto: ${conversationWithMessages.project.name}\nDescripción: ${conversationWithMessages.project.description || 'Sin descripción'}`;
       }
 
-      // Obtener respuesta de Claude
       const assistantResponse = await claudeService.sendMessageWithContext(
         claudeMessages,
         projectContext
       );
 
-      // Guardar respuesta del asistente
       const assistantMessage = await conversationsService.addMessage(
         conversationIdToUse,
         userId,
@@ -267,9 +256,12 @@ export class ConversationsController {
       });
     } catch (error: unknown) {
       console.error('Error in sendMessage:', error);
-      res.status(500).json({
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      const status = message.includes('límite') ? 429 : 500;
+
+      res.status(status).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: message
       });
     }
   }
@@ -346,6 +338,64 @@ export class ConversationsController {
       });
     } catch (error: unknown) {
       res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  async deleteMultipleConversations(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
+      const userId = req.user.id;
+      const { ids } = req.body;
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere un array de IDs'
+        });
+      }
+
+      if (ids.length > 20) {
+        return res.status(400).json({
+          success: false,
+          error: 'Máximo 20 conversaciones por solicitud'
+        });
+      }
+
+      const result = await conversationsService.deleteMultipleConversations(ids, userId);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error: unknown) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
+  async getStorageInfo(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
+      const userId = req.user.id;
+      const storageInfo = await conversationsService.getStorageInfo(userId);
+
+      res.json({
+        success: true,
+        data: storageInfo
+      });
+    } catch (error: unknown) {
+      res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       });

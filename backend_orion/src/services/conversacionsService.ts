@@ -1,6 +1,8 @@
 import { prisma } from '../config/database.js';
 import type { Prisma } from '@prisma/client';
 
+const MAX_CONVERSATIONS = 50; // Límite de conversaciones por usuario
+
 export class ConversationsService {
   async getUserConversations(userId: string, projectId?: string) {
     const where: Prisma.ConversationWhereInput = { userId, isArchived: false };
@@ -33,7 +35,8 @@ export class ConversationsService {
       projectName: conv.project?.name,
       messageCount: conv._count.messages,
       lastMessageAt: conv.lastMessageAt,
-      createdAt: conv.createdAt
+      createdAt: conv.createdAt,
+      updatedAt: conv.updatedAt
     }));
   }
 
@@ -62,10 +65,16 @@ export class ConversationsService {
   }
 
   async createConversation(userId: string, title?: string, projectId?: string) {
+    // Verificar cuota antes de crear
+    const canCreate = await this.canCreateConversation(userId);
+    if (!canCreate) {
+      throw new Error(`Has alcanzado el límite de ${MAX_CONVERSATIONS} conversaciones. Elimina algunas para continuar.`);
+    }
+
     const conversation = await prisma.conversation.create({
       data: {
         userId,
-        projectId: projectId ?? null, // <-- aquí el cambio
+        projectId: projectId ?? null,
         title: title || 'New Conversation'
       }
     });
@@ -80,7 +89,6 @@ export class ConversationsService {
     content: string,
     metadata: Prisma.InputJsonValue = {}
   ) {
-    // Verificar que la conversación pertenece al usuario
     const conversation = await prisma.conversation.findFirst({
       where: { id: conversationId, userId }
     });
@@ -89,7 +97,6 @@ export class ConversationsService {
       throw new Error('Conversation not found');
     }
 
-    // Crear mensaje
     const message = await prisma.message.create({
       data: {
         conversationId,
@@ -99,7 +106,6 @@ export class ConversationsService {
       }
     });
 
-    // Actualizar lastMessageAt
     await prisma.conversation.update({
       where: { id: conversationId },
       data: { lastMessageAt: new Date() }
@@ -135,14 +141,84 @@ export class ConversationsService {
   }
 
   async deleteConversation(id: string, userId: string) {
-    const conversation = await prisma.conversation.deleteMany({
+    const conversation = await prisma.conversation.findFirst({
       where: { id, userId }
     });
 
-    if (conversation.count === 0) {
+    if (!conversation) {
       throw new Error('Conversation not found');
     }
 
+    // Con onDelete: Cascade en el schema, los mensajes se eliminan automáticamente
+    await prisma.conversation.delete({
+      where: { id }
+    });
+
     return { success: true };
+  }
+
+  //Eliminar múltiples conversaciones
+  async deleteMultipleConversations(ids: string[], userId: string) {
+    // Verificar que pertenecen al usuario
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        id: { in: ids },
+        userId
+      },
+      select: { id: true }
+    });
+
+    const validIds = conversations.map(c => c.id);
+
+    if (validIds.length === 0) {
+      throw new Error('No conversations found');
+    }
+
+    // Con onDelete: Cascade, los mensajes se eliminan automáticamente
+    const result = await prisma.conversation.deleteMany({
+      where: {
+        id: { in: validIds }
+      }
+    });
+
+    return {
+      success: true,
+      deletedCount: result.count,
+      requestedCount: ids.length
+    };
+  }
+
+  //Obtener información de almacenamiento
+  async getStorageInfo(userId: string) {
+    const [conversationCount, totalMessages] = await Promise.all([
+      prisma.conversation.count({
+        where: { userId, isArchived: false }
+      }),
+      prisma.message.count({
+        where: {
+          conversation: { userId }
+        }
+      })
+    ]);
+
+    const percentage = Math.round((conversationCount / MAX_CONVERSATIONS) * 100);
+
+    return {
+      used: conversationCount,
+      limit: MAX_CONVERSATIONS,
+      percentage: Math.min(percentage, 100),
+      conversationCount,
+      maxConversations: MAX_CONVERSATIONS,
+      totalMessages,
+      isFull: conversationCount >= MAX_CONVERSATIONS,
+      isNearFull: percentage >= 80,
+    };
+  }
+
+  async canCreateConversation(userId: string): Promise<boolean> {
+    const count = await prisma.conversation.count({
+      where: { userId, isArchived: false }
+    });
+    return count < MAX_CONVERSATIONS;
   }
 }

@@ -103,7 +103,7 @@ export class AnalysesService {
   private orchestrator = new AnalysisOrchestratorService();
 
   /**
-   * Análisis NUEVO: Rápido, basado en índice estructural
+   * Análisis Rápido, basado en índice estructural
    * Usa CodeScanner + Claude por dimensiones
    */
   async analyzeProject(projectId: string, userId: string): Promise<AnalysisResult> {

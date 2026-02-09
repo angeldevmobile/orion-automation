@@ -161,6 +161,7 @@ model Conversation {
   isArchived      Boolean   @default(false) @map("is_archived")
   lastMessageAt   DateTime? @map("last_message_at")
   createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // Relations
   project         Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)

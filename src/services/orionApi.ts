@@ -747,3 +747,91 @@ export async function getIsometricDiagramHTML(
     return null;
   }
 }
+
+// =============================================
+// API de Almacenamiento de Conversaciones
+// =============================================
+
+export interface ChatStorageInfo {
+  used: number;
+  limit: number;
+  percentage: number;
+  conversationCount: number;
+  maxConversations: number;
+  totalMessages: number;
+  isFull: boolean;
+  isNearFull: boolean;
+}
+
+export async function getChatStorageInfo(
+  token: string
+): Promise<{ success: boolean; data?: ChatStorageInfo; error?: string }> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.storage), {
+      headers: getAuthHeaders(token),
+    });
+
+    if (!res.ok) {
+      throw new Error('Error al obtener información de almacenamiento');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching storage info:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+export async function bulkDeleteConversations(
+  ids: string[],
+  token: string
+): Promise<{ success: boolean; data?: { deletedCount: number }; error?: string }> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.bulkDeleteConversations), {
+      method: 'POST',
+      headers: getAuthHeaders(token),
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Error al eliminar conversaciones');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Error bulk deleting conversations:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+export async function deleteConversation(
+  conversationId: string,
+  token: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.conversationById(conversationId)), {
+      method: 'DELETE',
+      headers: getAuthHeaders(token),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Error al eliminar conversación');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}

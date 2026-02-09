@@ -8,19 +8,25 @@ const conversationsController = new ConversationsController();
 // All routes require authentication
 router.use(authenticate);
 
+// GET /api/conversations/storage - Get storage info
+router.get('/storage', (req, res) => conversationsController.getStorageInfo(req, res));
+
+// POST /api/conversations/bulk-delete - Delete multiple conversations
+router.post('/bulk-delete', (req, res) => conversationsController.deleteMultipleConversations(req, res));
+
+// POST /api/conversations/send - Send message (creates conversation if needed)
+router.post('/send', uploadMiddleware, (req, res) => conversationsController.sendMessage(req, res));
+
 // GET /api/conversations - Get all user conversations 
 router.get('/', (req, res) => conversationsController.getUserConversations(req, res));
-
-// GET /api/conversations/:id - Get conversation by ID with messages
-router.get('/:id', (req, res) => conversationsController.getConversationById(req, res));
 
 // POST /api/conversations - Create new conversation
 router.post('/', (req, res) => conversationsController.createConversation(req, res));
 
-// POST /api/conversations/send - Send message (creates conversation if needed) - CON UPLOAD
-router.post('/send', uploadMiddleware, (req, res) => conversationsController.sendMessage(req, res));
+// GET /api/conversations/:id - Get conversation by ID with messages
+router.get('/:id', (req, res) => conversationsController.getConversationById(req, res));
 
-// POST /api/conversations/:id/send - Send message to existing conversation - CON UPLOAD
+// POST /api/conversations/:id/send - Send message to existing conversation
 router.post('/:id/send', uploadMiddleware, (req, res) => conversationsController.sendMessage(req, res));
 
 // POST /api/conversations/:id/messages - Add message to conversation (manual)

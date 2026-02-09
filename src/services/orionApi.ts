@@ -629,6 +629,28 @@ export async function deleteAccount(token: string): Promise<{ success: boolean; 
   }
 }
 
+
+
+export async function changePassword(
+  data: any,
+  token: string
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.changePassword), {
+      method: 'POST',
+      headers: getAuthHeaders(token),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al cambiar contraseña'
+    };
+  }
+}
+
 /**
  * Genera diagramas de arquitectura (Mermaid, D2, Isométrico)
  */

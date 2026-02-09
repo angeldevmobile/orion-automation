@@ -3,6 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/components/theme/ThemeProvider';
@@ -18,13 +28,14 @@ import {
   Trash2,
   User,
   KeyRound,
-  Sparkles
+  Sparkles,
+  Check,
+  X
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth'; // Asumiendo que existe un hook useAuth
-import { deleteAccount } from '@/services/orionApi';
+import { deleteAccount, changePassword } from '@/services/orionApi';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -44,6 +55,25 @@ export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [language, setLanguage] = useState('es');
+
+  // Change Password State
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  interface PasswordRequirement {
+    label: string;
+    test: (password: string) => boolean;
+  }
+
+  const passwordRequirements: PasswordRequirement[] = [
+    { label: "Al menos 8 caracteres", test: (p) => p.length >= 8 },
+    { label: "Una letra mayúscula", test: (p) => /[A-Z]/.test(p) },
+    { label: "Una letra minúscula", test: (p) => /[a-z]/.test(p) },
+    { label: "Un número", test: (p) => /[0-9]/.test(p) },
+  ];
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,6 +108,74 @@ export default function Settings() {
         description: "Ocurrió un error inesperado.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "las contraseñas nuevas no coinciden",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const allRequirementsMet = passwordRequirements.every((req) =>
+      req.test(newPassword)
+    );
+    if (!allRequirementsMet) {
+      toast({
+        title: "Contraseña débil",
+        description: "La contraseña nueva debe cumplir todos los requisitos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      toast({
+        title: "Error",
+        description: "La nueva contraseña no puede ser igual a la actual.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await changePassword({ currentPassword, newPassword }, token);
+
+      if (result.success) {
+        toast({
+          title: "Contraseña actualizada",
+          description: "Tu contraseña ha sido actualizada exitosamente. Por favor inicia sesión nuevamente.",
+        });
+        setIsChangePasswordOpen(false);
+        localStorage.clear();
+        navigate('/login');
+      } else {
+        toast({
+          title: "Error",
+          description: result.error || "No se pudo actualizar la contraseña",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     }
   };
 
@@ -255,7 +353,82 @@ export default function Settings() {
                     <p className="text-sm text-muted-foreground">Actualiza tu contraseña de acceso</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">Cambiar</Button>
+                <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">Cambiar</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Cambiar contraseña</DialogTitle>
+                      <DialogDescription>
+                        Ingresa tu contraseña actual y la nueva contraseña para actualizarla.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleChangePassword} className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="current-password">Contraseña actual</Label>
+                        <Input
+                          id="current-password"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">Nueva contraseña</Label>
+                        <Input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                        />
+                        {/* Password requirements */}
+                        {newPassword && (
+                          <div className="grid grid-cols-2 gap-2 mt-3 p-3 bg-muted/30 rounded-lg border">
+                            {passwordRequirements.map((req, index) => (
+                              <div
+                                key={index}
+                                className={cn(
+                                  "flex items-center gap-2 text-xs transition-colors",
+                                  req.test(newPassword)
+                                    ? "text-emerald-500"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {req.test(newPassword) ? (
+                                  <Check className="h-3.5 w-3.5" />
+                                ) : (
+                                  <X className="h-3.5 w-3.5" />
+                                )}
+                                {req.label}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirmar nueva contraseña</Label>
+                        <Input
+                          id="confirm-password"
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsChangePasswordOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button type="submit" disabled={isLoading}>
+                          {isLoading ? "Actualizando..." : "Actualizar contraseña"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>

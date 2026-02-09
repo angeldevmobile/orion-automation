@@ -12,6 +12,7 @@ router.post('/login', (req, res) => authController.login(req, res));
 // Protected routes
 router.get('/me', authenticate, (req, res) => authController.me(req, res));
 router.delete('/me', authenticate, (req, res) => authController.deleteAccount(req, res));
+router.post('/change-password', authenticate, (req, res) => authController.changePassword(req, res));
 
 router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
 router.post('/reset-password', (req, res) => authController.resetPassword(req, res));

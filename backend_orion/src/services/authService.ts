@@ -365,4 +365,33 @@ export class AuthService {
       throw new Error('Could not delete account');
     }
   }
+
+  async changePassword(userId: string, oldPasswordInput: string, newPasswordInput: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isValidPassword = await bcrypt.compare(oldPasswordInput, user.password);
+
+    if (!isValidPassword) {
+      throw new Error('Invalid current password');
+    }
+
+    if (oldPasswordInput === newPasswordInput) {
+      throw new Error('New password cannot be the same as the old password');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPasswordInput, 10);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    return { success: true, message: 'Password updated successfully' };
+  }
 }

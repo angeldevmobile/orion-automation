@@ -11,6 +11,7 @@ export const API_CONFIG = {
     forgotPassword: '/api/auth/forgot-password',
     resetPassword: '/api/auth/reset-password',
     deleteAccount: '/api/auth/me',
+    changePassword: '/api/auth/change-password',
 
     // Health
     health: '/api/health',

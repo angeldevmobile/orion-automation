@@ -15,6 +15,8 @@ router.get('/', (req, res) => projectsController.getUserProjects(req, res));
 // GET /api/projects/:id - Get project by ID
 router.get('/:id', (req, res) => projectsController.getProjectById(req, res));
 
+
+router.post('/:id/clone-repo', projectsController.cloneRepository.bind(projectsController));
 // POST /api/projects - Create new project
 router.post('/', (req, res) => projectsController.createProject(req, res));
 

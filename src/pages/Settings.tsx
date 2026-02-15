@@ -191,7 +191,7 @@ export default function Settings() {
       <main className="container py-8 max-w-4xl animate-fade-in">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Configuración</h1>
-          <p className="text-muted-foreground mt-1">Personaliza tu experiencia en Nexus AI</p>
+          <p className="text-muted-foreground mt-1">Personaliza tu experiencia en Orion AI</p>
         </div>
 
         <div className="space-y-6">

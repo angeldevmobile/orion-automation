@@ -631,8 +631,13 @@ export async function deleteAccount(token: string): Promise<{ success: boolean; 
 
 
 
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export async function changePassword(
-  data: any,
+  data: ChangePasswordData,
   token: string
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
   try {
@@ -832,6 +837,33 @@ export async function deleteConversation(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+export async function cloneGithubRepository(
+  projectId: string,
+  repoUrl: string,
+  token: string
+): Promise<{ success: boolean; data?: { source: unknown; fileCount: number; path: string }; error?: string }> {
+  try {
+    const res = await fetch(getApiUrl(API_CONFIG.endpoints.cloneRepository(projectId)), {
+      method: 'POST',
+      headers: getAuthHeaders(token),
+      body: JSON.stringify({ repoUrl }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Error al clonar repositorio');
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error('Clone repository error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al clonar repositorio'
     };
   }
 }

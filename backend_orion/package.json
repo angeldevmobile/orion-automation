@@ -28,7 +28,7 @@
     "@prisma/client": "^5.22.0",
     "@puppeteer/browsers": "^2.11.1",
     "adm-zip": "^0.5.16",
-    "axios": "^1.13.2",
+    "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -43,6 +43,7 @@
     "openai": "^6.18.0",
     "pako": "^2.1.0",
     "puppeteer": "^24.37.2",
+    "simple-git": "^3.31.1",
     "stripe": "^20.1.2"
   },
   "devDependencies": {

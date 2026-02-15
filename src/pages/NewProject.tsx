@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { projectTypes } from "@/lib/mock-data";
-import { createProject, uploadProjectFiles, analyzeProject } from "@/services/orionApi";
+import { createProject, uploadProjectFiles, analyzeProject, cloneGithubRepository } from "@/services/orionApi";
 import { useToast } from "@/hooks/use-toast";
 
 const steps = [
@@ -193,117 +193,136 @@ export default function NewProject() {
   };
 
   const handleStartAnalysis = async () => {
-    setIsAnalyzing(true);
-    setAnalysisProgress({
-      currentChunk: 0,
-      totalChunks: 0,
-      status: "processing",
-      message: "Iniciando análisis...",
-    });
+  setIsAnalyzing(true);
+  setAnalysisProgress({
+    currentChunk: 0,
+    totalChunks: 0,
+    status: "processing",
+    message: "Iniciando análisis...",
+  });
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast({
-        title: "No autenticado",
-        description: "Por favor inicia sesión primero.",
-        variant: "destructive",
-      });
-      navigate("/login");
-      return;
+  const token = localStorage.getItem("token");
+  if (!token) {
+    toast({
+      title: "No autenticado",
+      description: "Por favor inicia sesión primero.",
+      variant: "destructive",
+    });
+    navigate("/login");
+    return;
+  }
+
+  const projectData = {
+    name: projectName,
+    type: projectType,
+    description: `Proyecto ${projectType} - ${sourceType}`,
+    settings: {
+      sourceType,
+      rules,
+      repoUrl: sourceType === "github" ? repoUrl : undefined,
+      filesCount: sourceType === "upload" ? uploadedFiles.length : undefined,
+    },
+  };
+
+  let eventSource: EventSource | null = null;
+
+  try {
+    // 1. Crear proyecto
+    const result = await createProject(projectData, token);
+
+    if (!result.success || !result.data?.id) {
+      throw new Error("Error al crear proyecto");
     }
 
-    const projectData = {
-      name: projectName,
-      type: projectType,
-      description: `Proyecto ${projectType} - ${sourceType}`,
-      settings: {
-        sourceType,
-        rules,
-        repoUrl: sourceType === "github" ? repoUrl : undefined,
-        filesCount: sourceType === "upload" ? uploadedFiles.length : undefined,
-      },
-    };
+    setCreatedProjectId(result.data.id);
 
-    let eventSource: EventSource | null = null;
-
-    try {
-      // 1. Crear proyecto
-      const result = await createProject(projectData, token);
-
-      if (!result.success || !result.data?.id) {
-        throw new Error("Error al crear proyecto");
-      }
-
-      setCreatedProjectId(result.data.id);
-
-      // 2. Subir archivos si hay
-      if (sourceType === "upload" && uploadedFiles.length > 0) {
-        setAnalysisProgress({
-          currentChunk: 0,
-          totalChunks: 0,
-          status: "processing",
-          message: "Subiendo archivos...",
-        });
-        await uploadProjectFiles(result.data.id, uploadedFiles, token);
-      }
-
-      // 3. Conectar a SSE para progreso (🆕 con token en query)
-      eventSource = new EventSource(
-        `http://localhost:3000/api/analyses/project/${result.data.id}/analyze/progress?token=${token}`
-      );
-
-      eventSource.onmessage = (event) => {
-        const progress = JSON.parse(event.data);
-        setAnalysisProgress(progress);
-      };
-
-      eventSource.onerror = () => {
-        if (eventSource) eventSource.close();
-      };
-
-      // 4. Iniciar análisis
-      toast({
-        title: "🤖 Claude está trabajando",
-        description: "Analizando tu código en profundidad...",
-      });
-
-      const response = await analyzeProject(result.data.id, token);
-
-      if (eventSource) eventSource.close();
-
-      if (response.success) {
-        setAnalysisComplete(true);
-        setAnalysisProgress({
-          currentChunk: 0,
-          totalChunks: 0,
-          status: "completed",
-          message: "Análisis completado",
-        });
-        toast({
-          title: "✅ Análisis completado",
-          description: "Los resultados están listos para revisar",
-        });
-      } else {
-        throw new Error(response.error || "Error en el análisis");
-      }
-    } catch (error) {
-      console.error("Analysis error:", error);
-      if (eventSource) eventSource.close();
+    // 2. Subir archivos O clonar repositorio
+    if (sourceType === "upload" && uploadedFiles.length > 0) {
       setAnalysisProgress({
         currentChunk: 0,
         totalChunks: 0,
-        status: "error",
-        message: "Error en el análisis",
+        status: "processing",
+        message: "Subiendo archivos...",
+      });
+      await uploadProjectFiles(result.data.id, uploadedFiles, token);
+    } else if (sourceType === "github" && repoUrl) {
+      setAnalysisProgress({
+        currentChunk: 0,
+        totalChunks: 0,
+        status: "processing",
+        message: "Clonando repositorio de GitHub...",
+      });
+      
+      
+      const cloneResult = await cloneGithubRepository(result.data.id, repoUrl, token);
+      
+      if (!cloneResult.success) {
+        throw new Error(cloneResult.error || "Error al clonar repositorio");
+      }
+      
+      toast({
+        title: "✅ Repositorio clonado",
+        description: `${cloneResult.data?.fileCount || 0} archivos procesados`,
+      });
+    }
+
+    // 3. Conectar a SSE para progreso
+    eventSource = new EventSource(
+      `http://localhost:3000/api/analyses/project/${result.data.id}/analyze/progress?token=${token}`
+    );
+
+    eventSource.onmessage = (event) => {
+      const progress = JSON.parse(event.data);
+      setAnalysisProgress(progress);
+    };
+
+    eventSource.onerror = () => {
+      if (eventSource) eventSource.close();
+    };
+
+    // 4. Iniciar análisis
+    toast({
+      title: "🤖 Claude está trabajando",
+      description: "Analizando tu código en profundidad...",
+    });
+
+    const response = await analyzeProject(result.data.id, token);
+
+    if (eventSource) eventSource.close();
+
+    if (response.success) {
+      setAnalysisComplete(true);
+      setAnalysisProgress({
+        currentChunk: 0,
+        totalChunks: 0,
+        status: "completed",
+        message: "Análisis completado",
       });
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo completar el análisis",
-        variant: "destructive",
+        title: "✅ Análisis completado",
+        description: "Los resultados están listos para revisar",
       });
-    } finally {
-      setIsAnalyzing(false);
+    } else {
+      throw new Error(response.error || "Error en el análisis");
     }
-  };
+  } catch (error) {
+    console.error("Analysis error:", error);
+    if (eventSource) eventSource.close();
+    setAnalysisProgress({
+      currentChunk: 0,
+      totalChunks: 0,
+      status: "error",
+      message: error instanceof Error ? error.message : "Error en el análisis",
+    });
+    toast({
+      title: "Error",
+      description: error instanceof Error ? error.message : "No se pudo completar el análisis",
+      variant: "destructive",
+    });
+  } finally {
+    setIsAnalyzing(false);
+  }
+};
 
   const handleOpenProject = () => {
     if (createdProjectId) {

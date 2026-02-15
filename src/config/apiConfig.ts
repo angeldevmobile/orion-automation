@@ -2,7 +2,7 @@
  * Configuración centralizada de la API
  */
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   endpoints: {
     // Auth
     login: '/api/auth/login',
@@ -20,6 +20,7 @@ export const API_CONFIG = {
     projects: '/api/projects',
     projectById: (id: string) => `/api/projects/${id}`,
     projectUpload: (id: string) => `/api/projects/${id}/upload`,
+    cloneRepository: (id: string) => `/api/projects/${id}/clone-repo`, 
     projectActions: (id: string) => `/api/projects/${id}/actions`,
 
     // Analyses
@@ -54,27 +55,22 @@ export const API_CONFIG = {
     diagramImage: (id: string, format: 'mermaid' | 'd2') => `/api/diagrams/project/${id}/image/${format}`,
     isometricImage: (id: string) => `/api/diagrams/project/${id}/isometric/image`,
     isometricHTML: (id: string) => `/api/diagrams/project/${id}/isometric/html`,
-  },
-} as const;
-
-/**
- * Helper para construir URLs completas
- */
-export const getApiUrl = (endpoint: string): string => {
-  return `${API_CONFIG.baseURL}${endpoint}`;
+  }
 };
 
-/**
- * Headers por defecto para requests autenticados
- */
-export const getAuthHeaders = (token: string) => ({
-  'Authorization': `Bearer ${token}`,
-  'Content-Type': 'application/json',
-});
+export function getApiUrl(endpoint: string): string {
+  return `${API_CONFIG.baseUrl}${endpoint}`;
+}
 
-/**
- * Headers para uploads de archivos (sin Content-Type)
- */
-export const getAuthHeadersForUpload = (token: string) => ({
-  'Authorization': `Bearer ${token}`,
-});
+export function getAuthHeaders(token: string): HeadersInit {
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+export function getAuthHeadersForUpload(token: string): HeadersInit {
+  return {
+    'Authorization': `Bearer ${token}`,
+  };
+}

@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import path from 'path';
 import fs from 'fs';
 import AdmZip from 'adm-zip';
+import { GitHubService } from './githubService.js';
 
 interface CreateProjectData {
   name: string;
@@ -21,6 +22,7 @@ interface ProjectSourceData {
 }
 
 export class ProjectsService {
+  private githubService: GitHubService;
   async getUserProjects(userId: string) {
     const projects = await prisma.project.findMany({
       where: { userId },
@@ -259,6 +261,108 @@ export class ProjectsService {
     });
 
     return files;
+  }
+
+  async cloneRepository(
+    projectId: string,
+    userId: string,
+    repoUrl: string
+  ) {
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId }
+    });
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    try {
+      // Clonar repositorio
+      const clonedPath = await this.githubService.cloneRepository(repoUrl, projectId);
+
+      // Extraer info del repositorio
+      const repoInfo = this.githubService.extractRepoInfo(repoUrl);
+
+      // Contar archivos clonados
+      const fileCount = this.countFilesRecursive(clonedPath);
+
+      // Crear registro en ProjectSource
+      const source = await prisma.projectSource.create({
+        data: {
+          projectId,
+          sourceType: 'github',
+          sourceName: repoInfo ? `${repoInfo.owner}/${repoInfo.repo}` : 'GitHub Repository',
+          sourceUrl: clonedPath,
+          branch: 'main',
+          metadata: {
+            repoUrl,
+            clonedAt: new Date().toISOString(),
+            fileCount,
+            owner: repoInfo?.owner,
+            repo: repoInfo?.repo,
+          }
+        }
+      });
+
+      // Actualizar proyecto
+      await prisma.project.update({
+        where: { id: projectId },
+        data: {
+          fileCount: {
+            increment: fileCount
+          }
+        }
+      });
+
+      return {
+        success: true,
+        source,
+        fileCount,
+        path: clonedPath
+      };
+    } catch (error) {
+      console.error('Error in cloneRepository:', error);
+      throw error;
+    }
+  }
+
+  private countFilesRecursive(dir: string): number {
+    let count = 0;
+
+    if (!fs.existsSync(dir)) {
+      return 0;
+    }
+
+    const items = fs.readdirSync(dir);
+
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+
+      if (
+        item === 'node_modules' ||
+        item === '.git' ||
+        item === 'dist' ||
+        item === 'build' ||
+        item === '.next' ||
+        item === '.DS_Store'
+      ) {
+        continue;
+      }
+
+      try {
+        const stat = fs.statSync(fullPath);
+
+        if (stat.isDirectory()) {
+          count += this.countFilesRecursive(fullPath);
+        } else {
+          count++;
+        }
+      } catch (error) {
+        console.error(`Error reading ${fullPath}:`, error);
+      }
+    }
+
+    return count;
   }
 
   async deleteProjectFile(fileId: string, projectId: string, userId: string) {

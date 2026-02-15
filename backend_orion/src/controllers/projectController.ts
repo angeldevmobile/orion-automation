@@ -257,6 +257,38 @@ export class ProjectsController {
     }
   }
 
+  async cloneRepository(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ success: false, error: 'No autorizado' });
+      }
+
+      const projectId = req.params.id as string;
+      const userId = req.user.id;
+      const { repoUrl } = req.body;
+
+      if (!repoUrl) {
+        return res.status(400).json({
+          success: false,
+          error: 'Repository URL is required'
+        });
+      }
+
+      const result = await projectsService.cloneRepository(projectId, userId, repoUrl);
+
+      res.json({
+        success: true,
+        data: result
+      });
+    } catch (error: unknown) {
+      console.error('Clone repository error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Error cloning repository'
+      });
+    }
+  }
+
   // Obtener historial de acciones del proyecto
   async getProjectActions(req: Request, res: Response): Promise<Response> {
     try {

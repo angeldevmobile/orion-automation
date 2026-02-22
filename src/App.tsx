@@ -11,6 +11,8 @@ import NewProject from "./pages/NewProject";
 import ProjectWorkspace from "./pages/ProjectWorkspace";
 import ProjectSettings from "./pages/ProjectSettings";
 import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
+import SubscriptionSettings from "./pages/Subscription";
 import Chat from "./pages/Chat";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
@@ -35,6 +37,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Rutas protegidas */}
@@ -83,6 +86,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/subscription"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionSettings />
                 </ProtectedRoute>
               }
             />

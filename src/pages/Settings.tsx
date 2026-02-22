@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -30,13 +31,18 @@ import {
   KeyRound,
   Sparkles,
   Check,
-  X
+  X,
+  CreditCard,
+  ArrowUpCircle,
+  Calendar
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { deleteAccount, changePassword } from '@/services/orionApi';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/use-subscription';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +57,8 @@ import {
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
@@ -77,7 +85,6 @@ export default function Settings() {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  // Intentar obtener el token del localStorage si no tenemos un hook de auth accesible directamente aquí
   const token = localStorage.getItem('token');
 
   const handleDeleteAccount = async () => {
@@ -91,9 +98,7 @@ export default function Settings() {
           title: "Cuenta eliminada",
           description: "Tu cuenta ha sido eliminada permanentemente.",
         });
-        // Limpiar almacenamiento local
         localStorage.clear();
-        // Redirigir al login
         navigate('/login');
       } else {
         toast({
@@ -184,6 +189,27 @@ export default function Settings() {
     { value: 'dark', label: 'Oscuro', icon: Moon },
     { value: 'system', label: 'Sistema', icon: Monitor },
   ];
+
+  const planLabels: Record<string, string> = {
+    free: 'Gratis',
+    pro: 'Pro',
+    team: 'Equipo'
+  };
+
+  const planColors: Record<string, string> = {
+    free: 'bg-gray-500',
+    pro: 'bg-blue-500',
+    team: 'bg-purple-500'
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -324,6 +350,101 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {/* Subscription - NUEVA SECCIÓN */}
+          <Card className="animate-fade-in" style={{ animationDelay: '0.35s' }}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-primary" />
+                Suscripción y facturación
+              </CardTitle>
+              <CardDescription>Gestiona tu plan y métodos de pago</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Plan actual */}
+              <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-accent/30">
+                <div className="flex items-center gap-3">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", subscription?.plan ? planColors[subscription.plan] : 'bg-gray-500')}>
+                    <Sparkles className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">Plan {subscription?.plan ? planLabels[subscription.plan] : 'Gratis'}</p>
+                      {subscription?.status === 'trialing' && (
+                        <Badge variant="secondary" className="text-xs">
+                          Periodo de prueba
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {subscription?.plan === 'free' ? 'Plan gratuito' : 
+                       subscription?.status === 'trialing' && subscription?.trialEnd ? 
+                       `Prueba hasta el ${formatDate(subscription.trialEnd)}` :
+                       subscription?.currentPeriodEnd ?
+                       `Renovación el ${formatDate(subscription.currentPeriodEnd)}` :
+                       'Plan activo'}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/settings/subscription')}
+                >
+                  Ver detalles
+                </Button>
+              </div>
+
+              {/* Próxima facturación */}
+              {subscription?.plan !== 'free' && subscription?.currentPeriodEnd && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Próxima facturación</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDate(subscription.currentPeriodEnd)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        ${subscription.plan === 'pro' ? '29' : '79'}.00
+                      </p>
+                      <p className="text-xs text-muted-foreground">por mes</p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Upgrade button si es free */}
+              {subscription?.plan === 'free' && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+                    <div className="flex items-center gap-3">
+                      <ArrowUpCircle className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Mejora tu plan</p>
+                        <p className="text-sm text-muted-foreground">
+                          Accede a funciones premium y análisis avanzados
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="hero" 
+                      size="sm"
+                      onClick={() => navigate('/pricing')}
+                    >
+                      Mejorar
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Account & Security */}
           <Card className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <CardHeader>
@@ -384,7 +505,6 @@ export default function Settings() {
                           onChange={(e) => setNewPassword(e.target.value)}
                           required
                         />
-                        {/* Password requirements */}
                         {newPassword && (
                           <div className="grid grid-cols-2 gap-2 mt-3 p-3 bg-muted/30 rounded-lg border">
                             {passwordRequirements.map((req, index) => (
